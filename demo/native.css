@@ -1,0 +1,66 @@
+* { box-sizing: border-box; }
+body { margin: 0; background: #313338; font: 14px/1.5 'Segoe UI', 'Malgun Gothic', sans-serif; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+#app-mount { height: 100vh; color: #dce0e6; }
+.native-layout { display: flex; height: 100%; min-height: 0; }
+.guilds_fixture { width: 70px; padding: 12px 10px; background: #1e1f22; flex-shrink: 0; }
+.guilds_fixture a, .guilds_fixture button { display: grid; place-items: center; color: #d5dae3; text-decoration: none; background: #383a40; width: 46px; height: 46px; border: 0; border-radius: 14px; margin-bottom: 10px; font-size: 11px; }
+.sidebarList_fixture { position: relative; width: 240px; padding: 0 10px; background: #2b2d31; flex-shrink: 0; overflow-y: auto; }
+.workspace-heading { height: 80px; display: flex; align-items: center; gap: 9px; padding: 0 6px; border-bottom: 1px solid #8d9a901c; }
+.workspace-heading strong { font-size: 12px; font-weight: 600; display: block; }
+.workspace-heading small { font-size: 10px; color: #8a9b90; }
+.workspace-icon { display: grid; place-items: center; width: 30px; height: 30px; background: #dce9df; border-radius: 6px; color: #477853; font-size: 10px; font-weight: 600; }
+.channel-category { color: #92a297; font-size: 9px; font-weight: 600; letter-spacing: .8px; margin: 26px 7px 9px; }
+.channel-link { display: flex; align-items: center; gap: 10px; color: #718276; height: 32px; border-radius: 3px; margin: 3px 0; text-decoration: none; font-size: 15px; padding: 0 10px; }
+.channel-link span { font-size: 12px; }
+.channel-link:hover { background: #7a9f8216; }
+.channel-count { margin-left: auto; font-size: 9px !important; background: #d0e3d5; color: #477455; border-radius: 3px; padding: 0 5px; }
+.sidebar-footnote { display: flex; align-items: center; gap: 9px; margin-top: 60px; padding: 14px 5px; border-top: 1px solid #8d9a9025; }
+.sidebar-footnote div { flex: 1; }
+.sidebar-footnote strong { font-size: 10px; font-weight: 500; display: block; }
+.sidebar-footnote small { font-size: 9px; color: #729f7d; }
+.self-avatar { background: #d8e8dc; color: #4c7d59; border-radius: 50%; width: 28px; height: 28px; display: grid; place-items: center; font-size: 11px; }
+.chat_fixture { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
+.title_fixture { height: 48px; flex-shrink: 0; padding: 7px 20px; display: flex; justify-content: space-between; position: relative; }
+.title_fixture h1 { margin: 0; font-size: 16px; }
+.search_fixture input { width: 220px; padding: 8px; border: 1px solid #b4c6bb; background: #fff; color: #254630; border-radius: 3px; }
+.chatContent_fixture { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.messages-scroller { flex: 1; overflow-y: auto; min-height: 0; scrollbar-width: thin; scrollbar-color: #cbd6cd transparent; }
+[data-list-id="chat-messages"] { list-style: none; margin: 0; padding: 0; }
+.messageListItem_fixture { position: relative; }
+.message_fixture { position: relative; padding: 12px 22px 12px 65px; }
+.message_fixture:hover { background: #2e3035; }
+.header_fixture { margin: 0 0 5px; font-size: 13px; font-weight: 600; }
+.header_fixture time { margin-left: 12px; font-size: 10px; font-weight: 400; color: #89918b; }
+.avatar_fixture { display: grid; place-items: center; position: absolute; top: 14px; left: 14px; width: 34px; height: 34px; border-radius: 50%; background: #62797e; }
+.timestamp_fixture { position: absolute; left: -50px; font-size: 10px; }
+.messageContent_fixture { line-height: 1.7; }
+.messageContent_fixture a { color: #438660; text-decoration: underline; text-underline-offset: 3px; }
+.mention { color: #8e9bf7; cursor: pointer; border-radius: 3px; padding: 0 3px; }
+.emoji { vertical-align: middle; }
+.repliedMessage_fixture { color: #8a9990; font-size: 11px; margin-bottom: 6px; }
+.imageWrapper_fixture { width: fit-content; max-width: 100%; margin-top: 7px; }
+.imageWrapper_fixture img { max-width: 100%; object-fit: contain; display: block; border-radius: 3px; }
+.imageWrapper_fixture a { display: block; }
+.spoilerContent_fixture { position: relative; }
+.spoilerContent_fixture:not(.revealed) img { filter: blur(25px); }
+.spoilerCover_fixture { position: absolute; inset: 0; width: 100%; border: 0; color: #fff; background: #183125aa; font-size: 13px; }
+.reaction_fixture { border: 1px solid #474c57; color: #abb7c5; background: #2b2d31; padding: 2px 8px; border-radius: 5px; margin: 5px 4px 0 0; font-size: 11px; }
+.reaction_fixture[aria-pressed="true"] { border: 1px solid #59966b !important; }
+.reply_fixture { opacity: 0; position: absolute; top: 3px; right: 12px; border: 1px solid #cbd7ce; background: #fff; color: #62806b; font-size: 10px; padding: 4px 9px; border-radius: 3px; }
+.message_fixture:hover .reply_fixture, .reply_fixture:focus-visible { opacity: 1; }
+.divider_fixture { font-size: 10px; display: flex; align-items: center; gap: 10px; margin: 16px 20px; color: #889a8e; }
+.divider_fixture::after { content: ''; height: 1px; background: #dce6df; flex: 1; }
+.form_fixture { margin: 12px 20px; background: #383a40; border-radius: 8px; flex-shrink: 0; }
+.inner_fixture { display: flex; align-items: center; min-height: 48px; padding: 0 10px; }
+.textArea_fixture { flex: 1; min-width: 0; }
+[contenteditable] { outline: none; min-height: 40px; padding: 10px; white-space: pre-wrap; }
+[contenteditable]:empty::before { content: attr(data-placeholder); color: #95a399; pointer-events: none; }
+.attachButton_fixture, .buttons_fixture button { border: 0; background: transparent; color: #8a9a8e; padding: 0 7px; font-size: 22px; }
+.attachedBars_fixture { padding: 6px 12px; font-size: 11px; color: #71917b; }
+.demo-tools { position: fixed; bottom: 70px; right: 18px; z-index: 300; font: 11px/1.6 'Segoe UI', 'Malgun Gothic', sans-serif; color: #577a62; }
+.demo-tools summary { cursor: pointer; padding: 6px 12px; border: 1px solid #c7d9cd; background: #f5f9f6; border-radius: 4px; opacity: .92; }
+.demo-tools[open] { width: 260px; background: #fff; border: 1px solid #c7d9cd; border-radius: 5px; padding: 12px; box-shadow: 0 6px 20px #0002; }
+.demo-tools button { display: block; width: 100%; margin-top: 5px; background: #edf5f0; color: #427252; border: 1px solid #d4e2d8; padding: 6px; font: inherit; border-radius: 3px; }
+.demo-mode::after { content: 'SAMPLE DATA · 연결 없는 미리보기'; position: fixed; top: 9px; right: 18px; z-index: 110; background: #217346; color: #d5e9dd; padding-left: 12px; font: 10px/1.8 'Segoe UI', sans-serif; }
