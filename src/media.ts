@@ -23,20 +23,31 @@ export class MediaController {
       if (!target.isConnected || !rows.some(row => row.contains(target))) {
         entry.control.remove();
         target.removeAttribute('data-sc-media');
+        this.patches.reset(target, 'data-sc-sticker');
         this.entries.delete(target);
       }
     }
+    const active = new Set<HTMLElement>();
     for (const row of rows) {
       const leaves = [...row.querySelectorAll<HTMLElement>(selectors.mediaLeaf)].filter(leaf =>
         !isOwned(leaf) && !leaf.closest(`${selectors.avatar}, [data-sc-avatar], [class*="avatarDecoration_"], .emoji, [class*="emoji"], [data-type="emoji"]`)
       );
       const candidates = [...new Set(leaves.map(leaf => {
+        if (stickerDetails(leaf)) {
+          // Keep extension controls outside native sticker click/capture handlers.
+          let action: HTMLElement | null = null;
+          for (let node: HTMLElement | null = leaf; node && node !== row; node = node.parentElement) {
+            if (node.matches('button, [role="button"], [class*="clickableSticker" i]') && !node.querySelector(selectors.content)) action = node;
+          }
+          if (action) return action;
+        }
         const wrapper = leaf.closest<HTMLElement>(selectors.attachment);
         return wrapper && row.contains(wrapper) ? wrapper : leaf;
       }))];
       // Only outermost wrappers; a nested wrapper must not get a second toggle.
       const targets = candidates.filter(target => !candidates.some(other => other !== target && other.contains(target)));
       targets.forEach((target, index) => {
+        active.add(target);
         const key = `${route}:${row.id || row.getAttribute('data-list-item-id')}:${index}`;
         let entry = this.entries.get(target);
         if (entry && entry.key !== key) {
@@ -46,12 +57,20 @@ export class MediaController {
         }
         if (!entry) {
           const control = button('', () => this.toggle(target), 'sc-media-toggle');
+          control.addEventListener('click', event => { event.preventDefault(); event.stopPropagation(); });
+          for (const type of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'dblclick', 'keydown', 'keyup']) {
+            control.addEventListener(type, event => event.stopPropagation());
+          }
           entry = { target, control, key, expanded: this.expandedKeys.has(key) };
           this.entries.set(target, entry);
         }
         if (!entry.control.isConnected || entry.control.nextSibling !== target) target.before(entry.control);
         this.render(entry);
       });
+    }
+    for (const [target, entry] of this.entries) if (!active.has(target)) {
+      entry.control.remove(); target.removeAttribute('data-sc-media');
+      this.patches.reset(target, 'data-sc-sticker'); this.entries.delete(target);
     }
     this.syncLayouts();
   }
@@ -86,6 +105,8 @@ export class MediaController {
     const value = entry.expanded ? 'expanded' : 'collapsed';
     if (entry.target.dataset.scMedia !== value) entry.target.dataset.scMedia = value;
     const sticker = stickerDetails(entry.target);
+    if (sticker) this.patches.set(entry.target, 'data-sc-sticker');
+    else this.patches.reset(entry.target, 'data-sc-sticker');
     const kind = sticker ? '스티커' : entry.target.matches('video') || entry.target.querySelector('video') ? '영상' : '이미지';
     const spoiler = entry.target.closest('[class*="spoiler" i]') || entry.target.querySelector('[class*="spoiler" i]');
     const name = sticker && !spoiler ? emojiText(sticker.name) : '';

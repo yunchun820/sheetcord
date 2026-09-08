@@ -1,6 +1,6 @@
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { fixtureMarkup } from './fixture';
-import { addMediaDisplayFixture } from './media-display-fixture';
+import { addMediaDisplayFixture, addStickerInteractionFixture } from './media-display-fixture';
 import { MediaController } from '../src/media';
 import { PickerController } from '../src/picker';
 import { AppearanceController } from '../src/appearance';
@@ -110,14 +110,15 @@ it('identifies stickers inside generic image wrappers and reads parent names wit
   const row = rows()[0];
   row.querySelector('.accessories_fixture')!.innerHTML = '<button aria-label="춤추는 고양이"><div class="imageWrapper_fixture"><img src="https://media.discordapp.net/stickers/123456789.png" alt="Sticker"></div></button>';
   const target = row.querySelector<HTMLElement>('.imageWrapper_fixture')!;
+  const action = target.parentElement!;
   expect(stickerDetails(target)?.name).toBe('춤추는 고양이');
   media.sync(rows(), 'route');
-  expect(target.previousElementSibling?.textContent).toBe('+ [스티커: 춤추는 고양이] 펼치기');
+  expect(action.previousElementSibling?.textContent).toBe('+ [스티커: 춤추는 고양이] 펼치기');
   target.parentElement!.setAttribute('aria-label', '인사하는 고양이');
   media.sync(rows(), 'route');
-  expect(target.previousElementSibling?.textContent).toBe('+ [스티커: 인사하는 고양이] 펼치기');
+  expect(action.previousElementSibling?.textContent).toBe('+ [스티커: 인사하는 고양이] 펼치기');
   target.classList.add('spoilerContent_fixture'); media.sync(rows(), 'route');
-  expect(target.previousElementSibling?.textContent).toBe('+ 스티커 펼치기');
+  expect(action.previousElementSibling?.textContent).toBe('+ 스티커 펼치기');
   target.querySelector('img')!.setAttribute('src', 'https://cdn.example.com/photo.png');
   target.querySelector('img')!.setAttribute('alt', '일반 사진');
   expect(stickerDetails(target)).toBeNull();
@@ -135,4 +136,30 @@ it('marks native Korean/English pinned controls and restores their exact DOM', (
   expect(panel.querySelectorAll('[data-sc-pinned-control]')).toHaveLength(1);
   panel.querySelectorAll('button')[1].textContent = 'Pinned Messages';
   appearance.clear(); expect(panel.innerHTML).toBe(original);
+});
+
+it('keeps toggle mouse and keyboard events outside native sticker capture handlers', () => {
+  document.body.innerHTML = fixtureMarkup();
+  const action = addStickerInteractionFixture();
+  const original = rows().map(row => row.innerHTML);
+  const native = vi.fn();
+  for (const type of ['pointerdown', 'mousedown', 'keydown', 'click']) action.addEventListener(type, native, true);
+  media.sync(rows(), 'route'); appearance.sync(root());
+  expect(action.querySelector('.sc-control-label')).toBeNull();
+  const toggle = action.previousElementSibling as HTMLButtonElement;
+  expect(toggle.className).toBe('sc-media-toggle');
+  for (const type of ['pointerdown', 'mousedown', 'keydown']) toggle.dispatchEvent(new Event(type, { bubbles: true }));
+  toggle.click();
+  expect(action.dataset.scMedia).toBe('expanded');
+  expect(native).not.toHaveBeenCalled();
+  expect(root().querySelector('[aria-label="스티커 정보 샘플"]')).toBeNull();
+  action.querySelector<HTMLElement>('img')!.click();
+  expect(native).toHaveBeenCalledOnce();
+  expect(root().querySelector('[aria-label="스티커 정보 샘플"]')).not.toBeNull();
+  root().querySelector('[aria-label="스티커 정보 샘플"]')!.remove();
+  toggle.click();
+  expect(action.dataset.scMedia).toBe('collapsed');
+  expect(native).toHaveBeenCalledOnce();
+  media.clear(); appearance.clear();
+  expect(rows().map(row => row.innerHTML)).toEqual(original);
 });

@@ -1,8 +1,8 @@
 import { allNative, DomPatches, isOwned, owned } from './dom';
 import emojiRegex from 'emoji-regex';
-import { selectors, accessibleLabel } from './adapter';
+import { selectors, accessibleLabel, stickerDetails } from './adapter';
 
-const mediaControl = (control: HTMLElement) => Boolean(control.closest('[class*="imageWrapper"], [class*="videoWrapper_"], [class*="embedThumbnail_"]') || control.querySelector('[class*="loadingOverlay_"], video, canvas'));
+const mediaControl = (control: HTMLElement) => Boolean(control.closest('[class*="imageWrapper"], [class*="videoWrapper_"], [class*="embedThumbnail_"]') || control.querySelector('[class*="loadingOverlay_"], video, canvas') || (control.querySelector(selectors.mediaLeaf) && stickerDetails(control)));
 const formIconControl = '[data-sc-form] [class*="prefixElement_"] [role="button"][class*="iconLayout_"][aria-hidden="false"]';
 
 /** Presentation only: native controls and their event handlers stay in place. */

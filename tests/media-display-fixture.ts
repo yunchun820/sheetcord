@@ -49,3 +49,20 @@ export function addConcealRegressionFixture() {
   observer.observe(sidebar);
   window.addEventListener('pagehide', () => observer.disconnect(), { once: true });
 }
+
+export function addStickerInteractionFixture() {
+  addMediaDisplayFixture();
+  document.querySelector('[aria-label="이름 표시 샘플"]')!.remove();
+  const host = document.querySelector('.stickerContainer_fixture')!;
+  host.innerHTML = `<div class="clickableSticker_fixture" role="button" tabindex="0" aria-label="쓰담냥이" style="width:48px;height:48px;transform:scale(.5)"><button aria-label="쓰담냥이" style="width:32px;height:32px;padding:4px"><div class="stickerAsset_fixture" style="width:32px;height:32px"><img alt="쓰담냥이, 스티커" src="${sampleImage}" width="160" height="160" style="width:32px;height:32px"></div></button></div>`;
+  const action = host.querySelector<HTMLElement>('.clickableSticker_fixture')!;
+  action.addEventListener('click', () => {
+    if (document.querySelector('[aria-label="스티커 정보 샘플"]')) return;
+    const info = document.createElement('section'); info.setAttribute('role', 'dialog'); info.setAttribute('aria-label', '스티커 정보 샘플');
+    info.style.cssText = 'position:fixed;right:20px;bottom:80px;background:white;border:1px solid #888;padding:20px;z-index:300';
+    info.innerHTML = '<p>쓰담냥이 · 샘플 스티커 정보</p><button>스티커 정보 닫기</button>';
+    info.querySelector('button')!.addEventListener('click', () => info.remove());
+    document.querySelector('#app-mount')!.append(info);
+  }, true);
+  return action;
+}

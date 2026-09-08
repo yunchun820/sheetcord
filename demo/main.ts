@@ -14,7 +14,7 @@ import { addPickerFixture, addReactionPickerFixture, addHeaderPanelFixture, addS
 import { addViewerFixture } from '../tests/viewer-fixture';
 import { addSearchFixture } from '../tests/search-fixture';
 import { addAudioMenuFixture } from '../tests/audio-menu-fixture';
-import { addMediaDisplayFixture, addChromePolishFixture, addConcealRegressionFixture } from '../tests/media-display-fixture';
+import { addMediaDisplayFixture, addChromePolishFixture, addConcealRegressionFixture, addStickerInteractionFixture } from '../tests/media-display-fixture';
 
 // Offline fixture only. This page never authenticates or connects to Discord.
 const appearanceAudit = new URLSearchParams(location.search).has('appearance-audit');
@@ -40,6 +40,7 @@ const audioMenuAudit = new URLSearchParams(location.search).has('audio-menu-audi
 const mediaDisplayAudit = new URLSearchParams(location.search).has('media-display-audit');
 const chromePolishAudit = new URLSearchParams(location.search).has('chrome-polish-audit');
 const concealRegression = new URLSearchParams(location.search).has('conceal-regression');
+const stickerInteraction = new URLSearchParams(location.search).has('sticker-interaction');
 history.replaceState(null, '', '/channels/100/1000');
 document.body.innerHTML = fixtureMarkup();
 document.body.classList.add('demo-mode');
@@ -64,6 +65,7 @@ if (audioMenuAudit) addAudioMenuFixture();
 if (mediaDisplayAudit) addMediaDisplayFixture();
 if (chromePolishAudit) addChromePolishFixture();
 if (concealRegression) addConcealRegressionFixture();
+if (stickerInteraction) addStickerInteractionFixture();
 if (appearanceAudit) addAppearanceFixture(document.querySelector('#app-mount')!);
 if (gridAudit) document.querySelector('[data-list-id="chat-messages"]')!.insertAdjacentHTML('afterbegin',
   messageMarkup(51, '아주 긴 이름도 셀 안에서 자연스럽게 줄바꿈되는 사용자', '짧은 본문') +

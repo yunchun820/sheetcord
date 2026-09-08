@@ -56,7 +56,7 @@ export class EmojiController {
         }
         const output = node.cloneNode(false) as Element;
         for (const attribute of [...output.attributes]) {
-          if (attribute.name === 'id' || (attribute.name.startsWith('data-sc-') && !['data-sc-media', 'data-sc-media-layout', 'data-sc-avatar'].includes(attribute.name)) || attribute.name === 'contenteditable'
+          if (attribute.name === 'id' || (attribute.name.startsWith('data-sc-') && !['data-sc-media', 'data-sc-media-layout', 'data-sc-sticker', 'data-sc-avatar'].includes(attribute.name)) || attribute.name === 'contenteditable'
             || attribute.name.startsWith('on') || attribute.name === 'data-list-item-id') output.removeAttribute(attribute.name);
         }
         mapping.set(output, node);
