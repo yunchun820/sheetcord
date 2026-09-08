@@ -9,7 +9,9 @@ const render = (settings: Settings) => {
   if (document.activeElement !== tabTitle) tabTitle.value = settings.tabTitle;
 };
 void store.read().then(render).catch(() => { status.textContent = '설정을 읽지 못했습니다. 확장 프로그램을 다시 로드해 주세요.'; });
-const unsubscribe = store.subscribe(render);
+let unsubscribe = () => {};
+try { unsubscribe = store.subscribe(render); }
+catch { status.textContent = '확장 프로그램 연결이 끊겼습니다. 설정창을 다시 열어 주세요.'; }
 window.addEventListener('pagehide', unsubscribe, { once: true });
 document.getElementById('tab-settings')!.addEventListener('submit', async event => {
   event.preventDefault();

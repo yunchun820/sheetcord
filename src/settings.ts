@@ -38,11 +38,21 @@ export function chromeSettings(): SettingsStore {
       return write;
     },
     subscribe(listener) {
+      // Reloading an unpacked extension removes chrome.storage from existing pages.
+      // Retain the event we registered with instead of looking up the invalidated API.
+      const event = typeof chrome !== 'undefined' ? chrome.storage?.onChanged : undefined;
+      if (!event) throw new Error('Sheetcord extension context is unavailable');
+      let active = true;
       const handler = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
-        if (area === 'local' && changes[settingsKey]) listener(sanitizeSettings(changes[settingsKey].newValue));
+        if (active && area === 'local' && changes[settingsKey]) listener(sanitizeSettings(changes[settingsKey].newValue));
       };
-      chrome.storage.onChanged.addListener(handler);
-      return () => chrome.storage.onChanged.removeListener(handler);
+      event.addListener(handler);
+      return () => {
+        if (!active) return;
+        active = false;
+        try { event.removeListener(handler); }
+        catch { /* A destroyed extension context has no live listener to unregister. */ }
+      };
     },
   };
 }

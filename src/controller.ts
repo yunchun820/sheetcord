@@ -48,17 +48,22 @@ export class SheetcordController {
   constructor(private store: SettingsStore, adapter = new DiscordAdapter()) { this.adapter = adapter; }
 
   async start() {
-    this.unwatch = this.store.subscribe(settings => {
-      this.settingsRevision++;
-      this.savedSettings = settings;
-      this.applySettings();
-    });
-    const revision = this.settingsRevision;
+    if (this.disposed) return;
     try {
+      this.unwatch = this.store.subscribe(settings => {
+        this.settingsRevision++;
+        this.savedSettings = settings;
+        this.applySettings();
+      });
+      const revision = this.settingsRevision;
       const settings = await this.store.read();
       if (revision === this.settingsRevision) this.savedSettings = settings;
     }
-    catch { this.showNotice('표시 설정을 읽지 못했습니다. 확장 프로그램을 새로고침해 주세요.'); return; }
+    catch {
+      this.unwatch?.(); this.unwatch = null;
+      if (!this.disposed) this.showNotice('확장 프로그램 연결을 확인하지 못했습니다. 디스코드 페이지를 새로고침해 주세요.');
+      return;
+    }
     if (this.disposed) return;
     this.applySettings();
   }
