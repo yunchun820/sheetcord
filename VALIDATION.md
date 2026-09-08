@@ -1,3 +1,11 @@
+# 0.2.51 integration verification (2026-09-08)
+
+- TypeScript check, 56 tests, production build and archive verification pass in the main repository checkout.
+- Actual Chrome/Discord: channel shortcut cells render inside the ribbon (top 73.6px, bottom 125.6px within 66–148px at 2048px viewport width).
+- With the sidebar collapsed, switching from a text channel to a forum and back works; the current-channel cell follows navigation. Sidebar visibility and all three media preferences were restored. No messages were sent.
+- This verifies the channel-shortcut release fix, not completion of the full Excel-fidelity audit. Narrow layouts, all popup variants and real-world performance improvement still need further verification. Only channel links mounted in the native sidebar are available as shortcuts.
+- Older observations below describe earlier builds and must not be read as current comprehensive coverage.
+
 # Sheetcord 0.1.0 검증 기록
 
 검증일: 2026-09-07. 이 문서는 **샘플 DOM에서 확인한 동작**과 **실제 디스코드에서 아직 확인하지 못한 동작**을 구분합니다.

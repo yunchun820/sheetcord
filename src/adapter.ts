@@ -12,11 +12,12 @@ export const selectors = {
   row: 'li[id^="chat-messages-"], [data-list-item-id^="chat-messages___"]',
   content: '[id^="message-content-"]',
   author: '[id^="message-username-"], [class*="username_"]',
+  avatar: '[class*="avatar_"], [class*="avatarWrapper_"], [class*="avatarContainer_"], [class*="replyAvatar_"], [class*="embedAuthorIcon_"], [class*="embedFooterIcon_"], img[src*="/avatars/"], img[src*="/embed/avatars/"]',
   editor: '[role="textbox"][contenteditable="true"][data-slate-editor="true"], [role="textbox"][contenteditable="true"]',
   form: 'form, [class*="form_"]',
   header: 'section[aria-label][class*="title_"], [class*="title_"][class*="container_"]',
   members: '[class*="membersWrap_"]',
-  attachment: '[class*="imageWrapper_"], [class*="imageContainer_"]',
+  attachment: '[class*="imageWrapper_"], [class*="imageContainer_"], [class*="embedImage_"], [class*="embedThumbnail_"]',
   reaction: '[class*="reaction_"][role="button"], button[class*="reaction_"], [class*="reaction_"]',
   search: '[role="searchbox"], [contenteditable="true"][data-slate-editor="true"][aria-label*="검색"], [class*="searchBar_"] [contenteditable="true"], [class*="searchBar_"] input',
 };
@@ -42,6 +43,33 @@ export interface GuildTab {
   source: HTMLElement;
 }
 
+export interface ChannelEntry { key: string; label: string; selected: boolean; source: HTMLElement }
+
+// A nonempty attribute may still be visually blank (spaces, zero-width characters).
+// Keep ZWJ/ZWNJ intact: they are meaningful in emoji sequences and some scripts.
+function cleanLabel(value: string | null | undefined): string {
+  return (value ?? '').replace(/[\u200B\u200E\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function accessibleLabel(element: Element): string {
+  const referenced = (element.getAttribute('aria-labelledby') ?? '').split(/\s+/)
+    .filter(Boolean).map(id => cleanLabel(element.ownerDocument.getElementById(id)?.textContent)).filter(Boolean).join(' ');
+  return referenced || cleanLabel(element.getAttribute('aria-label')) || cleanLabel(element.getAttribute('title'));
+}
+
+function guildLabel(source: HTMLElement): string {
+  const semanticText = [...source.querySelectorAll('[class*="hiddenVisually_"]')]
+    .map(node => cleanLabel(node.textContent)).filter(label => label && !/^(읽지 않은 메시지|unread messages?|멘션 \d+)$/i.test(label));
+  if (semanticText.length) return semanticText.join(' ');
+  const direct = accessibleLabel(source);
+  if (direct) return direct;
+  for (const child of allNative(source, '[aria-labelledby], [aria-label], [title], img[alt]')) {
+    const label = accessibleLabel(child) || cleanLabel(child.getAttribute('alt'));
+    if (label) return label;
+  }
+  return cleanLabel(source.textContent);
+}
+
 export class DiscordAdapter {
   constructor(private doc: Document = document) {}
 
@@ -49,12 +77,18 @@ export class DiscordAdapter {
     const root = queryNative<HTMLElement>(this.doc, selectors.root);
     if (!root) return null;
     const guilds = queryNative<HTMLElement>(root, selectors.guilds);
-    const sidebar = queryNative<HTMLElement>(root, selectors.sidebar);
+    const sidebarList = queryNative<HTMLElement>(root, selectors.sidebar);
     const list = queryNative<HTMLElement>(root, selectors.list);
     const chat = queryNative<HTMLElement>(root, selectors.chat)
       ?? list?.closest<HTMLElement>('main, [role="main"], [class*="chatContent_"]')
-      ?? queryNative<HTMLElement>(root, '[class*="peopleColumn_"], [class*="tabBody_"]');
-    if (!guilds || !sidebar || !chat) return null;
+      ?? queryNative<HTMLElement>(root, '[class*="peopleColumn_"], [class*="tabBody_"], main, [role="main"], [class*="applicationStore_"], [class*="shop_"], [class*="questHome_"]')
+      ?? queryNative<HTMLElement>(root, '[class*="page_"]');
+    if (!guilds || !sidebarList || !chat) return null;
+    // Discord can place navigation and the account panel inside a separate sidebar.
+    // Style that column too, but never expand the scope into guilds or the chat pane.
+    const sidebarColumn = sidebarList.closest<HTMLElement>('[class*="sidebar_"]');
+    const sidebar = sidebarColumn && !sidebarColumn.contains(chat) && !sidebarColumn.contains(guilds)
+      ? sidebarColumn : sidebarList;
     const form = allNative<HTMLElement>(chat, selectors.form).find(element => !element.closest(selectors.row)) ?? null;
     const editor = form ? queryNative<HTMLElement>(form, selectors.editor) : null;
     const chatContainer = chat.closest<HTMLElement>('[class*="chat_"]') ?? chat.parentElement ?? chat;
@@ -79,11 +113,11 @@ export class DiscordAdapter {
       const key = isHome ? '@me' : id;
       if (seen.has(key)) continue;
       seen.add(key);
-      const rawLabel = source.getAttribute('aria-label') || source.getAttribute('title')
-        || source.querySelector('img')?.getAttribute('alt') || source.textContent?.trim() || '서버';
+      const rawLabel = guildLabel(source);
+      const label = rawLabel.replace(/^(?:읽지 않은 메시지|unread messages?)\s*,\s*/i, '') || `${folder ? '서버 폴더' : '서버'} (${key})`;
       const container = source.closest('[class*="listItem_"]') ?? source;
       tabs.push({
-        key, label: isHome ? '개인 메시지' : rawLabel,
+        key, label: isHome ? '개인 메시지' : label,
         selected: isHome ? server === '@me' : key === server,
         unread: /unread|읽지 않|멘션|mention/i.test(rawLabel)
           || Boolean(container.querySelector('[class*="unread_"], [class*="numberBadge_"]')),
@@ -92,6 +126,18 @@ export class DiscordAdapter {
     }
     // Home is always the first sheet; the caller adds a regular link if Discord omitted it.
     return [...tabs.filter(tab => tab.key === '@me'), ...tabs.filter(tab => tab.key !== '@me')];
+  }
+
+  channels(surface: Surface): ChannelEntry[] {
+    const seen = new Set<string>();
+    return allNative<HTMLAnchorElement>(surface.sidebar, 'a[href^="/channels/"]').flatMap(source => {
+      const key = source.getAttribute('href')!;
+      if (!/^\/channels\/[^/]+\/[^/]+$/.test(key) || seen.has(key)) return [];
+      seen.add(key);
+      const label = cleanLabel(source.querySelector('[class*="name_"], [class*="channelName_"]')?.textContent)
+        || accessibleLabel(source) || cleanLabel(source.textContent);
+      return label ? [{ key, label, selected: key === this.doc.defaultView?.location.pathname, source }] : [];
+    });
   }
 
   channelLabel(surface: Surface): string {
@@ -104,7 +150,11 @@ export class DiscordAdapter {
   rows(surface: Surface): HTMLElement[] {
     if (!surface.list) return [];
     const rows = allNative<HTMLElement>(surface.list, selectors.row);
-    return rows.filter(row => !row.parentElement?.closest(selectors.row));
+    return rows.filter(row => !row.matches('[role="separator"], [class*="divider_"]') && !row.parentElement?.closest(selectors.row));
+  }
+
+  emojiLabels(surface: Surface): HTMLElement[] {
+    return allNative<HTMLElement>(surface.sidebar, 'a[href^="/channels/"] [class*="name_"], a[href^="/channels/"] [class*="channelName_"]');
   }
 
   focusSearch(): boolean {

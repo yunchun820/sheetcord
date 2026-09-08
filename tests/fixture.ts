@@ -1,12 +1,13 @@
 export const sampleImage = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="720" height="300" viewBox="0 0 720 300"><rect width="720" height="300" fill="#e9f1e9"/><path d="M0 240 190 65 350 230 500 105 720 300H0" fill="#97b99e"/><path d="m80 300 220-220 210 220" fill="#59886b"/><circle cx="590" cy="68" r="26" fill="#f9edc0"/><text x="28" y="42" font-family="sans-serif" font-size="14" fill="#355840">MONDAY / FIELD NOTES</text></svg>');
 export const sampleEmoji = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"><circle cx="11" cy="11" r="10" fill="#86b48e"/><path d="m5 11 4 4 8-8" fill="none" stroke="white" stroke-width="2"/></svg>');
+export const sampleAvatar = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" rx="20" fill="#90afa0"/><circle cx="20" cy="15" r="7" fill="#fff"/><path d="M7 36a13 13 0 0 1 26 0" fill="#fff"/></svg>');
 
 export function messageMarkup(id: number, author: string, text: string, options: { image?: boolean; spoiler?: boolean; continuation?: boolean; reaction?: boolean; reply?: boolean; customEmoji?: boolean } = {}) {
   const time = new Date(Date.UTC(2026, 8, 7, 0, 30 + id));
   return `<li id="chat-messages-1000-${id}" class="messageListItem_fixture">
     <div class="message_fixture">
       <div class="contents_fixture">
-        ${!options.continuation ? `<span class="avatar_fixture">${author[0]}</span><h3 class="header_fixture"><span id="message-username-${id}" class="username_fixture">${author}</span><time datetime="${time.toISOString()}">${time.getUTCHours() + 9}:${String(time.getUTCMinutes()).padStart(2, '0')}</time></h3>` : `<time class="timestamp_fixture" datetime="${time.toISOString()}">09:35</time>`}
+        ${!options.continuation ? `<img class="avatar_fixture" src="${sampleAvatar}" alt="${author} 프로필 사진" width="40" height="40"><h3 class="header_fixture"><span id="message-username-${id}" class="username_fixture" role="button" tabindex="0">${author}</span><time datetime="${time.toISOString()}">${time.getUTCHours() + 9}:${String(time.getUTCMinutes()).padStart(2, '0')}</time></h3>` : `<time class="timestamp_fixture" datetime="${time.toISOString()}">09:35</time>`}
         ${options.reply ? '<div class="repliedMessage_fixture">↳ 지윤 · 지난번에 이야기한 시안 공유 부탁드려요.</div>' : ''}
         <div id="message-content-${id}" class="messageContent_fixture">${text}${options.customEmoji ? ` <img class="emoji" src="${sampleEmoji}" alt=":approved:" width="20" height="20">` : ''}</div>
       </div>
@@ -14,7 +15,7 @@ export function messageMarkup(id: number, author: string, text: string, options:
         ${options.image ? `<div class="imageWrapper_fixture"><div class="${options.spoiler ? 'spoilerContent_fixture' : 'imageContent_fixture'}"><a href="${sampleImage}" target="_blank" rel="noopener"><img src="${sampleImage}" alt="초록색 산 풍경 샘플" width="540" height="225"></a>${options.spoiler ? '<button class="spoilerCover_fixture" data-action="spoiler">스포일러 · 클릭하여 공개</button>' : ''}</div></div>` : ''}
         ${options.reaction ? '<div class="reactions_fixture"><button type="button" class="reaction_fixture" role="button" aria-pressed="false" data-action="reaction"><span>👍</span> <span class="reactionCount_fixture">3</span></button><button type="button" class="reaction_fixture" role="button" aria-pressed="false" data-action="reaction"><span>🔥</span> <span class="reactionCount_fixture">2</span></button></div>' : ''}
       </div>
-      <button type="button" class="reply_fixture" data-action="reply" aria-label="${author}에게 답장">↩ 답장</button>
+      <button type="button" class="reply_fixture" data-action="reply" aria-label="${author}에게 답장">답장</button>
     </div>
   </li>`;
 }
@@ -42,7 +43,7 @@ export function fixtureMarkup() {
       <div class="channel-category">⌄ &nbsp; LOUNGE</div>
       <a class="channel-link" href="/channels/100/1006"># <span>잡담</span></a>
       <a class="channel-link" href="/channels/100/1007"># <span>오늘의 음악</span></a>
-      <div class="sidebar-footnote"><span class="self-avatar">J</span><div><strong>나의 워크스페이스</strong><small>● 온라인</small></div><span>⚙</span></div>
+      <div class="sidebar-footnote"><img class="self-avatar avatarWrapper_fixture" src="${sampleAvatar}" alt="내 프로필 사진" width="30" height="30"><div><strong>나의 워크스페이스</strong><small>● 온라인</small></div><span>⚙</span></div>
     </nav>
     <div class="chat_fixture">
       <section class="title_fixture container_fixture" aria-label="채널 헤더"><h1># 일반</h1><div class="toolbar_fixture"><div class="search_fixture"><input role="searchbox" placeholder="검색" aria-label="대화 검색"></div></div></section>

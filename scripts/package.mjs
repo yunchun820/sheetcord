@@ -11,10 +11,12 @@ async function collect(directory, prefix = '') {
   }
 }
 await collect('dist');
+const { version } = JSON.parse(await readFile('dist/manifest.json', 'utf8'));
+const archivePath = `artifacts/sheetcord-${version}.zip`;
 const zip = zipSync(entries, { level: 9 });
 const unpacked = unzipSync(zip);
 for (const [name, bytes] of Object.entries(entries)) {
   if (!Buffer.from(bytes).equals(Buffer.from(unpacked[name]))) throw new Error(`Archive validation failed: ${name}`);
 }
-await writeFile('artifacts/sheetcord-0.1.0.zip', zip);
-console.log(`artifacts/sheetcord-0.1.0.zip — ${Object.keys(entries).length} files, ${zip.length} bytes (verified)`);
+await writeFile(archivePath, zip);
+console.log(`${archivePath} — ${Object.keys(entries).length} files, ${zip.length} bytes (verified)`);

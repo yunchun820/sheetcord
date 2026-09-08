@@ -23,11 +23,11 @@ interface ProxyEntry { source: HTMLElement; proxy: HTMLElement; fingerprint: str
 export class EmojiController {
   private entries = new Map<HTMLElement, ProxyEntry>();
 
-  sync(rows: HTMLElement[], showEmoji: boolean) {
+  sync(rows: HTMLElement[], showEmoji: boolean, additionalSources: HTMLElement[] = []) {
     if (showEmoji) { this.clear(); return; }
-    const candidates = rows.flatMap(row => [...row.querySelectorAll<HTMLElement>(`${selectors.content}, ${selectors.reaction}`)])
+    const candidates = [...rows.flatMap(row => [...row.querySelectorAll<HTMLElement>(`${selectors.content}, ${selectors.reaction}, [class*="repliedMessage_"]`)]), ...additionalSources]
       .filter(element => !isOwned(element) && !element.closest('[contenteditable="true"]') && !element.querySelector('[contenteditable="true"]'));
-    const sources = candidates.filter(element => !candidates.some(other => other !== element && other.contains(element)));
+    const sources = [...new Set(candidates.filter(element => !candidates.some(other => other !== element && other.contains(element))))];
     const active = new Set(sources);
     for (const [source, entry] of this.entries) {
       if (!source.isConnected || !active.has(source)) this.remove(entry);
@@ -42,7 +42,7 @@ export class EmojiController {
       const mapping = new WeakMap<Node, Node>();
       const clone = (node: Node, insideCode = false): Node => {
         if (node.nodeType === Node.TEXT_NODE) {
-          const output = document.createTextNode(insideCode ? node.textContent ?? '' : emojiText(node.textContent ?? ''));
+          const output = document.createTextNode(emojiText(node.textContent ?? ''));
           mapping.set(output, node);
           return output;
         }
@@ -56,7 +56,7 @@ export class EmojiController {
         }
         const output = node.cloneNode(false) as Element;
         for (const attribute of [...output.attributes]) {
-          if (attribute.name === 'id' || attribute.name.startsWith('data-sc-') || attribute.name === 'contenteditable'
+          if (attribute.name === 'id' || (attribute.name.startsWith('data-sc-') && !['data-sc-media', 'data-sc-avatar'].includes(attribute.name)) || attribute.name === 'contenteditable'
             || attribute.name.startsWith('on') || attribute.name === 'data-list-item-id') output.removeAttribute(attribute.name);
         }
         mapping.set(output, node);

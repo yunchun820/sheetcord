@@ -2,11 +2,65 @@ import './native.css';
 import { SheetcordController } from '../src/controller';
 import { defaults, sanitizeSettings, type Settings, type SettingsStore } from '../src/settings';
 import { fixtureMarkup, messageMarkup } from '../tests/fixture';
+import { addDarkSidebarFixture } from '../tests/sidebar-fixture';
+import { addAppearanceFixture } from '../tests/appearance-fixture';
+import { addChannelAuditFixture } from '../tests/channel-fixture';
+import { addMessageParityFixture } from '../tests/message-parity-fixture';
+import { addAudioPanelFixture } from '../tests/audio-panel-fixture';
+import { addVoiceFixture } from '../tests/voice-fixture';
+import { addProfileFixture, addFullProfileFixture, addAccountProfileFixture } from '../tests/profile-fixture';
+import { addPickerFixture, addReactionPickerFixture, addHeaderPanelFixture, addSearchFilterFixture, addContextMenuFixture, addMessageSubmenuFixture, addPostUploadFixture, addStickerRailFixture } from '../tests/picker-fixture';
+import { addViewerFixture } from '../tests/viewer-fixture';
+import { addSearchFixture } from '../tests/search-fixture';
+import { addAudioMenuFixture } from '../tests/audio-menu-fixture';
 
 // Offline fixture only. This page never authenticates or connects to Discord.
+const appearanceAudit = new URLSearchParams(location.search).has('appearance-audit');
+const gridAudit = new URLSearchParams(location.search).has('grid-audit');
+const channelAudit = new URLSearchParams(location.search).has('channel-audit');
+const messageParity = new URLSearchParams(location.search).has('message-parity');
+const audioPanel = new URLSearchParams(location.search).has('audio-panel');
+const voicePanel = new URLSearchParams(location.search).has('voice-panel');
+const profileAudit = new URLSearchParams(location.search).has('profile-audit');
+const fullProfileAudit = new URLSearchParams(location.search).has('full-profile-audit');
+const accountProfileAudit = new URLSearchParams(location.search).has('account-profile-audit');
+const pickerAudit = new URLSearchParams(location.search).has('picker-audit');
+const reactionAudit = new URLSearchParams(location.search).has('reaction-audit');
+const headerPanelAudit = new URLSearchParams(location.search).has('header-panel-audit');
+const filterAudit = new URLSearchParams(location.search).has('filter-audit');
+const contextMenuAudit = new URLSearchParams(location.search).has('context-menu-audit');
+const messageSubmenuAudit = new URLSearchParams(location.search).has('message-submenu-audit');
+const postUploadAudit = new URLSearchParams(location.search).has('post-upload-audit');
+const stickerRailAudit = new URLSearchParams(location.search).has('sticker-rail-audit');
+const viewerAudit = new URLSearchParams(location.search).has('viewer-audit');
+const searchAudit = new URLSearchParams(location.search).has('search-audit');
+const audioMenuAudit = new URLSearchParams(location.search).has('audio-menu-audit');
 history.replaceState(null, '', '/channels/100/1000');
 document.body.innerHTML = fixtureMarkup();
 document.body.classList.add('demo-mode');
+if (channelAudit) addChannelAuditFixture();
+if (messageParity) addMessageParityFixture();
+if (audioPanel) addAudioPanelFixture();
+if (voicePanel) addVoiceFixture();
+if (profileAudit) addProfileFixture();
+if (fullProfileAudit) addFullProfileFixture();
+if (accountProfileAudit) addAccountProfileFixture();
+if (pickerAudit) addPickerFixture();
+if (reactionAudit) addReactionPickerFixture();
+if (headerPanelAudit) addHeaderPanelFixture();
+if (filterAudit) addSearchFilterFixture();
+if (contextMenuAudit) addContextMenuFixture();
+if (messageSubmenuAudit) addMessageSubmenuFixture();
+if (postUploadAudit) addPostUploadFixture();
+if (stickerRailAudit) addStickerRailFixture();
+if (viewerAudit) addViewerFixture();
+if (searchAudit) addSearchFixture();
+if (audioMenuAudit) addAudioMenuFixture();
+if (appearanceAudit) addAppearanceFixture(document.querySelector('#app-mount')!);
+if (gridAudit) document.querySelector('[data-list-id="chat-messages"]')!.insertAdjacentHTML('afterbegin',
+  messageMarkup(51, '아주 긴 이름도 셀 안에서 자연스럽게 줄바꿈되는 사용자', '짧은 본문') +
+  messageMarkup(52, '셀 검증', '여러 줄의 긴 텍스트도 옆 셀로 넘어가지 않고 같은 셀 안에서 읽을 수 있어야 합니다. '.repeat(4) +
+    '<br><a href="https://example.com">https://example.com/' + 'very-long-path-'.repeat(12) + '</a><pre>const longValue = "' + 'unbroken'.repeat(30) + '";</pre>'));
 let settings = sanitizeSettings(JSON.parse(localStorage.getItem('sheetcord.demo.settings') || 'null'));
 const listeners = new Set<(settings: Settings) => void>();
 const store: SettingsStore = {
@@ -22,9 +76,9 @@ const controller = new SheetcordController(store);
 void controller.start();
 
 const app = document.querySelector('#app-mount')!;
-const editor = document.querySelector<HTMLElement>('[contenteditable="true"]')!;
-const form = document.querySelector('form')!;
-const list = document.querySelector('[data-list-id="chat-messages"]')!;
+const editor = document.querySelector<HTMLElement>('[contenteditable="true"]') ?? document.createElement('div');
+const form = document.querySelector('form') ?? document.createElement('form');
+const list = document.querySelector('[data-list-id="chat-messages"]') ?? document.createElement('ol');
 let composing = false;
 let counter = 20;
 let replyAuthor = '';
@@ -102,10 +156,24 @@ form.querySelector<HTMLInputElement>('input[type="file"]')!.addEventListener('ch
 
 const demo = document.createElement('details');
 demo.className = 'demo-tools';
-demo.innerHTML = '<summary>샘플 도구</summary><p>샘플 데이터 · 실제 디스코드 연결 없음</p><button data-demo="reset">엑셀 화면 켜기</button><button data-demo="receive">새 메시지 수신</button><button data-demo="older">과거 메시지 로딩</button><button data-demo="long-tabs">서버 탭 15개 추가</button><button data-demo="break">화면 구조 변경 재현</button><button data-demo="repair">구조 복구 및 재시도</button>';
+demo.innerHTML = '<summary>샘플 도구</summary><p>샘플 데이터 · 실제 디스코드 연결 없음</p><button data-demo="reset">엑셀 화면 켜기</button><button data-demo="receive">새 메시지 수신</button><button data-demo="older">과거 메시지 로딩</button><button data-demo="long-tabs">서버 탭 15개 추가</button><button data-demo="tab-labels">탭 이름 누락·긴 이름 재현</button><button data-demo="break">화면 구조 변경 재현</button><button data-demo="repair">구조 복구 및 재시도</button>';
 document.body.append(demo);
+const sidebarDemo = document.createElement('button');
+sidebarDemo.textContent = '왼쪽 다크 테마·긴 채널명 재현';
+sidebarDemo.dataset.demo = 'dark-sidebar';
+demo.append(sidebarDemo);
+const minuteDemo = document.createElement('button');
+minuteDemo.textContent = '같은 분 메시지 재현';
+minuteDemo.dataset.demo = 'same-minute';
+demo.append(minuteDemo);
 demo.addEventListener('click', event => {
   const action = (event.target as HTMLElement).dataset.demo;
+  if (action === 'same-minute') {
+    ['2026-09-07T00:31:01Z', '2026-09-07T00:31:59Z', '2026-09-07T00:32:00Z'].forEach((value, index) => {
+      document.getElementById(`chat-messages-1000-${index + 1}`)?.querySelector('time')?.setAttribute('datetime', value);
+    });
+  }
+  if (action === 'dark-sidebar') addDarkSidebarFixture();
   if (action === 'reset') void store.write({ ...defaults });
   if (action === 'receive') list.insertAdjacentHTML('beforeend', messageMarkup(++counter, '민수', '새 메시지가 도착했습니다! 실시간 수신 샘플이에요. 🎉', { reaction: true }));
   if (action === 'older') for (let i = 0; i < 6; i++) list.insertAdjacentHTML('afterbegin', messageMarkup(++counter, '도현', '이전 대화에서 불러온 메시지입니다.'));
@@ -115,6 +183,18 @@ demo.addEventListener('click', event => {
     tab.setAttribute('aria-label', `프로젝트 ${i + 1}`);
     tab.textContent = `P${i}`;
     document.querySelector('[data-list-id="guildsnav"]')!.append(tab);
+  }
+  if (action === 'tab-labels') {
+    const sources = ['100', '200', '300', '400', '500'].map(id => document.querySelector<HTMLElement>(`[data-list-item-id="guildsnav___${id}"]`)!);
+    for (const source of sources) { source.setAttribute('aria-label', ' \u200B '); source.replaceChildren(); }
+    let label = document.getElementById('demo-server-label');
+    if (!label) { label = document.createElement('span'); label.id = 'demo-server-label'; label.hidden = true; document.body.append(label); }
+    label.textContent = '디자인 스튜디오 · 아주 긴 서버 이름도 마지막 글자까지 표시되는지 확인';
+    sources[0].setAttribute('aria-labelledby', label.id);
+    sources[1].innerHTML = '<span role="img" aria-label="사이드 프로젝트 · 아이콘에 연결된 이름"></span>';
+    sources[2].setAttribute('title', '퇴근 후 모임 · 제목 속성');
+    sources[3].innerHTML = '<img alt="개발 이야기 · 이미지 대체 이름">';
+    // The fifth server intentionally has no retrievable name; its ID remains readable.
   }
   if (action === 'break') {
     const sidebar = document.querySelector('.sidebarList_fixture');

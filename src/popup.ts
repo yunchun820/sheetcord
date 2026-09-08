@@ -2,7 +2,7 @@ import { chromeSettings, type Settings } from './settings';
 
 const store = chromeSettings();
 const status = document.querySelector<HTMLElement>('#status')!;
-const keys: (keyof Settings)[] = ['enabled', 'showEmoji', 'sidebarCollapsed'];
+const keys: (keyof Settings)[] = ['enabled', 'showAvatars', 'showEmoji', 'showImages', 'sidebarCollapsed'];
 const render = (settings: Settings) => {
   for (const key of keys) (document.getElementById(key) as HTMLInputElement).checked = settings[key];
 };

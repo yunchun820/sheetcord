@@ -3,21 +3,30 @@ import { DomPatches, isOwned, button, owned } from './dom';
 import { EmojiController } from './emoji';
 import { MediaController } from './media';
 import { MessageGrid } from './messages';
+import { AvatarController } from './avatars';
+import { AppearanceController } from './appearance';
 import { defaults, type Settings, type SettingsStore } from './settings';
 import { WorkbookShell } from './shell';
 import theme from './theme.css?inline';
 
 export class SheetcordController {
   private settings: Settings = { ...defaults };
+  private savedSettings: Settings = { ...defaults };
+  private pendingSettings = new Map<number, Partial<Settings>>();
+  private settingsRevision = 0;
+  private nextWrite = 0;
   private patches = new DomPatches();
-  private media = new MediaController();
+  private media = new MediaController(() => this.schedule());
   private emoji = new EmojiController();
   private grid = new MessageGrid();
+  private avatars = new AvatarController();
+  private appearance = new AppearanceController();
   private shell: WorkbookShell | null = null;
   private style: HTMLStyleElement | null = null;
   private observer: MutationObserver | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private observedForm: HTMLElement | null = null;
+  private observedList: HTMLElement | null = null;
   private unwatch: (() => void) | null = null;
   private frame = 0;
   private missingTimer = 0;
@@ -32,14 +41,40 @@ export class SheetcordController {
 
   async start() {
     this.unwatch = this.store.subscribe(settings => {
-      this.settings = settings;
-      if (settings.enabled) this.activate();
-      else { this.stop(); this.notice?.remove(); }
+      this.settingsRevision++;
+      this.savedSettings = settings;
+      this.applySettings();
     });
-    try { this.settings = await this.store.read(); }
+    const revision = this.settingsRevision;
+    try {
+      const settings = await this.store.read();
+      if (revision === this.settingsRevision) this.savedSettings = settings;
+    }
     catch { this.showNotice('표시 설정을 읽지 못했습니다. 확장 프로그램을 새로고침해 주세요.'); return; }
     if (this.disposed) return;
+    this.applySettings();
+  }
+
+  private applySettings() {
+    if (this.disposed) return;
+    this.settings = Object.assign({}, this.savedSettings, ...this.pendingSettings.values());
     if (this.settings.enabled) this.activate();
+    else { this.stop(); this.notice?.remove(); }
+  }
+
+  private updateSettings(patch: Partial<Settings>) {
+    const id = ++this.nextWrite;
+    this.pendingSettings.set(id, patch);
+    this.applySettings();
+    void this.store.write(patch).then(() => {
+      this.savedSettings = { ...this.savedSettings, ...patch };
+      this.pendingSettings.delete(id);
+      this.applySettings();
+    }, () => {
+      this.pendingSettings.delete(id);
+      this.applySettings();
+      this.shell?.message('설정을 저장하지 못해 이전 값으로 복원했습니다. 다시 시도해 주세요.');
+    });
   }
 
   private activate() {
@@ -53,7 +88,7 @@ export class SheetcordController {
     });
     this.observer.observe(document.body, {
       childList: true, subtree: true, characterData: true, attributes: true,
-      attributeFilter: ['class', 'aria-label', 'aria-selected', 'aria-current', 'aria-pressed', 'src', 'datetime'],
+      attributeFilter: ['class', 'aria-label', 'aria-labelledby', 'aria-describedby', 'title', 'alt', 'id', 'data-list-item-id', 'aria-selected', 'aria-current', 'aria-pressed', 'src', 'datetime'],
     });
     window.addEventListener('popstate', this.schedule);
     window.addEventListener('resize', this.schedule);
@@ -68,7 +103,7 @@ export class SheetcordController {
   private refresh() {
     if (!this.running) return;
     try {
-      if (!location.pathname.startsWith('/channels/')) { this.fail('채팅 페이지에서 확장 아이콘의 다시 적용을 눌러 주세요.'); return; }
+      // Login and public marketing pages have no authenticated workspace.
       const surface = this.adapter.discover();
       if (!surface) {
         if (!this.missingTimer) this.missingTimer = window.setTimeout(() => {
@@ -78,17 +113,30 @@ export class SheetcordController {
         }, 2500);
         return;
       }
+      const tabs = this.adapter.tabs(surface);
+      // Navigation mounts before its server entries during a full page load.
+      if (!tabs.length) {
+        if (!this.missingTimer) this.missingTimer = window.setTimeout(() => {
+          this.missingTimer = 0;
+          const ready = this.adapter.discover();
+          if (ready && this.adapter.tabs(ready).length) this.schedule();
+          else this.fail('서버 탐색 항목을 찾지 못해 원래 화면으로 돌아왔습니다.');
+        }, 5000);
+        return;
+      }
       clearTimeout(this.missingTimer);
       this.missingTimer = 0;
-      const tabs = this.adapter.tabs(surface);
-      if (!tabs.length) { this.fail('서버 탐색 항목을 찾지 못해 원래 화면으로 돌아왔습니다.'); return; }
       if (!this.shell) this.mount();
       this.decorate(surface);
+      this.appearance.sync(surface.root);
       const rows = this.adapter.rows(surface);
-      this.grid.sync(rows, location.pathname);
-      this.media.sync(rows, location.pathname);
-      this.emoji.sync(rows, this.settings.showEmoji);
-      this.shell!.render(this.settings, tabs, this.adapter.channelLabel(surface), Boolean(surface.form));
+      this.grid.sync(rows, location.pathname, this.settings.showEmoji);
+      this.avatars.sync(surface.root, rows);
+      this.media.sync(rows, location.pathname, this.settings.showImages);
+      const emojiSources = this.settings.showEmoji ? []
+        : [...this.adapter.emojiLabels(surface), ...this.appearance.emojiSources(surface.root)];
+      this.emoji.sync(rows, this.settings.showEmoji, emojiSources);
+      this.shell!.render(this.settings, tabs, this.adapter.channelLabel(surface), Boolean(surface.form), this.adapter.channels(surface));
       this.patches.prune();
     } catch {
       this.fail('화면 적용 중 문제가 생겨 원래 디스코드 화면으로 복원했습니다.');
@@ -100,7 +148,7 @@ export class SheetcordController {
     this.style.textContent = theme;
     document.head.append(this.style);
     this.shell = new WorkbookShell({
-      update: patch => { void this.store.write(patch).catch(() => this.shell?.message('설정을 저장하지 못했습니다. 다시 시도해 주세요.')); },
+      update: patch => this.updateSettings(patch),
       collapseImages: () => { this.media.collapseAll(); this.shell?.message('이미지를 모두 접었습니다.'); },
       search: () => {
         this.patches.set(document.documentElement, 'data-sc-search-open');
@@ -111,8 +159,14 @@ export class SheetcordController {
   }
 
   private decorate(surface: Surface) {
+    this.observedList = surface.list;
     this.patches.set(document.documentElement, 'data-sc-active');
     this.patches.set(document.documentElement, 'data-sc-sidebar-collapsed', String(this.settings.sidebarCollapsed));
+    this.patches.set(document.documentElement, 'data-sc-show-avatars', String(this.settings.showAvatars));
+    this.patches.set(document.documentElement, 'data-sc-show-images', String(this.settings.showImages));
+    this.patches.set(document.documentElement, 'data-sc-show-emoji', String(this.settings.showEmoji));
+    this.patches.set(document.documentElement, 'data-sc-view', /^\/(store|shop|quest-home)/.test(location.pathname) ? 'catalog' : 'conversation');
+    this.patches.set(document.documentElement, 'data-sc-has-composer', String(Boolean(surface.form)));
     const marks = new Map<Element, string>([
       [surface.root, 'data-sc-root'],
       [surface.guilds.closest('nav') ?? surface.guilds, 'data-sc-guilds'],
@@ -148,9 +202,12 @@ export class SheetcordController {
     const height = this.observedForm?.isConnected ? Math.max(42, Math.min(140, Math.ceil(this.observedForm.getBoundingClientRect().height) + 8)) : 42;
     // Extension-owned style node; no edits to Discord's inline style or layout state.
     const geometry = this.style?.dataset.formHeight;
-    if (this.style && geometry !== String(height)) {
+    const listRect = this.observedList?.isConnected ? this.observedList.getBoundingClientRect() : null;
+    const gap = listRect?.width ? Math.max(0, window.innerWidth - listRect.right) : 0;
+    if (this.style && (geometry !== String(height) || this.style.dataset.sheetGap !== String(gap))) {
       this.style.dataset.formHeight = String(height);
-      this.style.textContent = `${theme}\nhtml[data-sc-active]{--sc-form-height:${height}px}`;
+      this.style.dataset.sheetGap = String(gap);
+      this.style.textContent = `${theme}\nhtml[data-sc-active]{--sc-form-height:${height}px;--sc-sheet-right-gap:${gap}px}`;
     }
   }
 
@@ -161,6 +218,7 @@ export class SheetcordController {
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
     this.observedForm = null;
+    this.observedList = null;
     cancelAnimationFrame(this.frame);
     cancelAnimationFrame(this.geometryFrame);
     clearTimeout(this.missingTimer);
@@ -168,6 +226,8 @@ export class SheetcordController {
     window.removeEventListener('popstate', this.schedule);
     window.removeEventListener('resize', this.schedule);
     this.emoji.clear();
+    this.appearance.clear();
+    this.avatars.clear();
     this.media.clear();
     this.grid.clear();
     this.patches.restore();

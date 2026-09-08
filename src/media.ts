@@ -1,4 +1,4 @@
-import { button, isOwned, owned } from './dom';
+import { button, isOwned } from './dom';
 import { selectors } from './adapter';
 
 interface MediaEntry { target: HTMLElement; control: HTMLButtonElement; key: string; expanded: boolean }
@@ -6,17 +6,23 @@ interface MediaEntry { target: HTMLElement; control: HTMLButtonElement; key: str
 /** Hide only the visual wrapper. Spoiler overlays stay inside it and remain untouched. */
 export class MediaController {
   private entries = new Map<HTMLElement, MediaEntry>();
-  private expandedKeys = new Set<string>();
+  private collapsedKeys = new Set<string>();
   private route = '';
+  private showImages = false;
 
   constructor(private onChange: () => void = () => {}) {}
 
-  sync(rows: HTMLElement[], route: string) {
+  sync(rows: HTMLElement[], route: string, showImages: boolean) {
+    if (this.showImages !== showImages) this.anchored(() => this.reconcile(rows, route, showImages));
+    else this.reconcile(rows, route, showImages);
+  }
+
+  private reconcile(rows: HTMLElement[], route: string, showImages: boolean) {
     if (route !== this.route) {
       this.clear();
-      this.expandedKeys.clear();
       this.route = route;
     }
+    this.showImages = showImages;
     for (const [target, entry] of this.entries) {
       if (!target.isConnected || !rows.some(row => row.contains(target))) {
         entry.control.remove();
@@ -25,8 +31,13 @@ export class MediaController {
       }
     }
     for (const row of rows) {
-      const candidates = [...row.querySelectorAll<HTMLElement>(selectors.attachment)]
-        .filter(target => !isOwned(target) && target.querySelector('img, video'));
+      const leaves = [...row.querySelectorAll<HTMLElement>('img, video')].filter(leaf =>
+        !isOwned(leaf) && !leaf.closest(`${selectors.avatar}, [data-sc-avatar], [class*="avatarDecoration_"], .emoji, [class*="emoji"], [data-type="emoji"]`)
+      );
+      const candidates = [...new Set(leaves.map(leaf => {
+        const wrapper = leaf.closest<HTMLElement>(selectors.attachment);
+        return wrapper && row.contains(wrapper) ? wrapper : leaf;
+      }))];
       // Only outermost wrappers; a nested wrapper must not get a second toggle.
       const targets = candidates.filter(target => !candidates.some(other => other !== target && other.contains(target)));
       targets.forEach((target, index) => {
@@ -39,7 +50,7 @@ export class MediaController {
         }
         if (!entry) {
           const control = button('', () => this.toggle(target), 'sc-media-toggle');
-          entry = { target, control, key, expanded: this.expandedKeys.has(key) };
+          entry = { target, control, key, expanded: !this.collapsedKeys.has(key) };
           this.entries.set(target, entry);
         }
         if (!entry.control.isConnected || entry.control.nextSibling !== target) target.before(entry.control);
@@ -49,11 +60,14 @@ export class MediaController {
   }
 
   private render(entry: MediaEntry) {
-    const value = entry.expanded ? 'expanded' : 'collapsed';
+    const value = !this.showImages ? 'hidden' : entry.expanded ? 'expanded' : 'collapsed';
     if (entry.target.dataset.scMedia !== value) entry.target.dataset.scMedia = value;
-    const label = entry.expanded ? '− 이미지 접기' : '+ 이미지 펼치기';
+    const kind = entry.target.matches('video') || entry.target.querySelector('video') ? '영상' : '이미지';
+    const label = !this.showImages ? `${kind} 숨김` : entry.expanded ? `− ${kind} 접기` : `+ ${kind} 펼치기`;
     if (entry.control.textContent !== label) entry.control.textContent = label;
-    entry.control.setAttribute('aria-expanded', String(entry.expanded));
+    entry.control.disabled = !this.showImages;
+    entry.control.title = !this.showImages ? '리본의 이미지 표시를 켜면 볼 수 있습니다.' : '';
+    entry.control.setAttribute('aria-expanded', String(this.showImages && entry.expanded));
   }
 
   private anchored(change: () => void) {
@@ -77,20 +91,21 @@ export class MediaController {
 
   toggle(target: HTMLElement) {
     const entry = this.entries.get(target);
-    if (!entry) return;
+    if (!entry || !this.showImages) return;
     this.anchored(() => {
       entry.expanded = !entry.expanded;
-      if (entry.expanded) this.expandedKeys.add(entry.key);
-      else this.expandedKeys.delete(entry.key);
+      if (entry.expanded) this.collapsedKeys.delete(entry.key);
+      else this.collapsedKeys.add(entry.key);
       this.render(entry);
     });
   }
 
   collapseAll() {
+    if (!this.showImages) return;
     this.anchored(() => {
-      this.expandedKeys.clear();
       for (const entry of this.entries.values()) {
         entry.expanded = false;
+        this.collapsedKeys.add(entry.key);
         this.render(entry);
       }
     });
@@ -102,6 +117,6 @@ export class MediaController {
       entry.control.remove();
     }
     this.entries.clear();
-    this.expandedKeys.clear();
+    this.collapsedKeys.clear();
   }
 }

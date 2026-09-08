@@ -1,10 +1,12 @@
 export interface Settings {
   enabled: boolean;
   showEmoji: boolean;
+  showAvatars: boolean;
+  showImages: boolean;
   sidebarCollapsed: boolean;
 }
 
-export const defaults: Settings = { enabled: true, showEmoji: true, sidebarCollapsed: false };
+export const defaults: Settings = { enabled: true, showEmoji: false, showAvatars: false, showImages: false, sidebarCollapsed: false };
 export const settingsKey = 'sheetcord.settings';
 
 export function sanitizeSettings(value: unknown): Settings {
@@ -20,13 +22,18 @@ export interface SettingsStore {
 }
 
 export function chromeSettings(): SettingsStore {
+  let pendingWrite: Promise<void> = Promise.resolve();
   return {
     async read() {
       return sanitizeSettings((await chrome.storage.local.get(settingsKey))[settingsKey]);
     },
-    async write(patch) {
-      const previous = sanitizeSettings((await chrome.storage.local.get(settingsKey))[settingsKey]);
-      await chrome.storage.local.set({ [settingsKey]: sanitizeSettings({ ...previous, ...patch }) });
+    write(patch) {
+      const write = pendingWrite.then(async () => {
+        const previous = sanitizeSettings((await chrome.storage.local.get(settingsKey))[settingsKey]);
+        await chrome.storage.local.set({ [settingsKey]: sanitizeSettings({ ...previous, ...patch }) });
+      });
+      pendingWrite = write.catch(() => {});
+      return write;
     },
     subscribe(listener) {
       const handler = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
