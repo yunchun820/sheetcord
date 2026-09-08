@@ -30,3 +30,27 @@ export function addThreadFixture() {
   `;
   document.head.append(style);
 }
+
+/** Structural shape verified on Chrome; all text and assets remain synthetic. */
+export function addNativeThreadFixture() {
+  addThreadFixture();
+  for (const row of document.querySelectorAll('li[id^="chat-messages-"]')) {
+    row.querySelector('.message_fixture')!.setAttribute('data-list-item-id', `chat-messages___${row.id}`);
+  }
+  const card = document.querySelector<HTMLElement>('.threadMessageAccessory_thread')!;
+  card.closest('.message_fixture')!.classList.add('hasThread_native');
+  const connector = document.createElement('style');
+  connector.textContent = '.hasThread_native::after{content:"";position:absolute;left:32px;bottom:30px;width:32px;height:85px;border-left:2px solid gray;border-bottom:2px solid gray;z-index:4}';
+  document.head.append(connector);
+  card.classList.remove('threadMessageAccessory_thread');
+  card.setAttribute('aria-roledescription', '스레드 열기 버튼');
+  card.querySelector('.threadName_thread')!.className = 'name__native';
+  card.before(card.querySelector('.spine_thread')!);
+  const bottom = card.querySelector('.bottomLine_thread')!;
+  const accessory = document.createElement('div'); accessory.className = 'threadMessageAccessory_native';
+  accessory.append(...bottom.childNodes); bottom.append(accessory);
+  accessory.querySelector('.threadMessagePreview_thread')!.className = 'threadMessageAccessoryPreview_native';
+  accessory.querySelector('.username_thread')!.insertAdjacentHTML('afterend', `<span><span class="copyOnlyText_native">[TEAM]</span><span class="clanTagChiplet_native"><img class="badge_native" src="${sampleAvatar}" alt="서버 태그"></span></span>`);
+  const content = document.getElementById('message-content-201')!;
+  content.textContent = Array.from({length:12},(_,i)=>`[13:${String(i).padStart(2,'0')}] 작성자: 인용된 실제 본문은 그대로 유지합니다.`).join('\n');
+}

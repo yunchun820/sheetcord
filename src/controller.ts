@@ -8,6 +8,7 @@ import { AppearanceController } from './appearance';
 import { TabController } from './tab';
 import { PickerController } from './picker';
 import { ChannelScanner } from './channel-scan';
+import { ThreadExcerpts } from './thread-excerpts';
 import { defaults, type Settings, type SettingsStore } from './settings';
 import { WorkbookShell } from './shell';
 import theme from './theme.css?inline';
@@ -27,6 +28,7 @@ export class SheetcordController {
   private tab = new TabController();
   private picker = new PickerController();
   private channelScanner = new ChannelScanner();
+  private threadExcerpts = new ThreadExcerpts();
   private shell: WorkbookShell | null = null;
   private style: HTMLStyleElement | null = null;
   private observer: MutationObserver | null = null;
@@ -139,6 +141,7 @@ export class SheetcordController {
       this.appearance.sync(surface.root);
       const rows = this.adapter.rows(surface);
       this.grid.sync(rows, location.pathname, this.settings.showEmoji);
+      this.threadExcerpts.sync(rows, location.pathname);
       this.avatars.sync(surface.root, rows);
       this.media.sync(rows, location.pathname);
       const emojiSources = this.settings.showEmoji ? []
@@ -240,6 +243,7 @@ export class SheetcordController {
   }
 
   private stop() {
+    this.threadExcerpts.clear();
     this.channelScanner.clear();
     this.tab.clear();
     this.running = false;

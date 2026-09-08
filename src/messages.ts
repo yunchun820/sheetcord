@@ -16,6 +16,10 @@ export class MessageGrid {
     if (this.route !== route) { this.clear(); this.route = route; }
     const currentAuthors = new Set<HTMLElement>();
     const currentThreads = new Set<HTMLElement>();
+    for (const row of rows) for (const card of allNative<HTMLElement>(row, selectors.threadCard)) {
+      currentThreads.add(card);
+      this.authorPatches.set(card, 'data-sc-thread-card');
+    }
     for (const row of rows) for (const name of allNative<HTMLElement>(row, selectors.threadName)) {
       const card = name.closest<HTMLElement>('[class*="threadMessageAccessory_"], [class*="container_"]');
       if (card && card !== row && row.contains(card) && !card.querySelector(selectors.row)) {
@@ -50,7 +54,7 @@ export class MessageGrid {
       }
       const metadata = <T extends HTMLElement>(selector: string) => allNative<T>(row, selector).find(node =>
         !node.closest(`${selectors.visuallyHidden}, [data-sc-thread-card], [class*="repliedMessage_"], [class*="messageSnapshot_"]`)
-        && node.closest(selectors.row) === row);
+        && (node.closest(selectors.row) === row || node.closest(selectors.row)?.parentElement === row));
       const authorNode = metadata<HTMLElement>(selectors.author);
       const timeNode = metadata<HTMLTimeElement>('time');
       const authorName = authorNode?.querySelector<HTMLElement>('[class*="username_"]') ?? authorNode;

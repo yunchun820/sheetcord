@@ -1600,7 +1600,7 @@ html[data-sc-active] #app-mount [data-sc-row] [data-sc-sticker][data-sc-media="e
 html[data-sc-active] #app-mount [data-sc-channel-scanning] { opacity: 0 !important; }
 
 /* Accessibility transcripts must stay clipped, including inside presentation clones. */
-html[data-sc-active] #app-mount :is([class*="hiddenVisually_"], [class*="visuallyHidden_"]) {
+html[data-sc-active] #app-mount :is([class*="hiddenVisually_"], [class*="visuallyHidden_"], [class*="copyOnlyText_"]) {
   position: absolute !important; display: block !important; width: 1px !important;
   height: 1px !important; min-width: 0 !important; min-height: 0 !important; max-height: 1px !important;
   padding: 0 !important; margin: -1px !important; border: 0 !important;
@@ -1626,13 +1626,13 @@ html[data-sc-active] #app-mount [data-sc-thread-card] :is([class*="topLine_"], [
   width: 100% !important; min-width: 0 !important; height: 20px !important;
   padding: 0 !important; margin: 0 !important; overflow: hidden !important;
 }
-html[data-sc-active] #app-mount [data-sc-thread-card] :is([class*="threadName_"], [class*="threadMessagePreview_"], [class*="messageContent_"], [class*="username_"], [data-sc-emoji-proxy]) {
+html[data-sc-active] #app-mount [data-sc-thread-card] :is([class*="threadName_"], [class*="topLine_"] > [class*="name_"], [class*="threadMessagePreview_"], [class*="threadMessageAccessoryPreview_"], [class*="messageContent_"], [class*="username_"], [data-sc-emoji-proxy]) {
   min-width: 0 !important; max-width: 100% !important; overflow: hidden !important;
   white-space: nowrap !important; text-overflow: ellipsis !important;
   font: 12px/20px 'Segoe UI','Malgun Gothic',sans-serif !important;
 }
-html[data-sc-active] #app-mount [data-sc-thread-card] :is([class*="threadName_"], [class*="threadMessagePreview_"]) { flex: 1 1 0% !important; }
-html[data-sc-active] #app-mount [data-sc-thread-card] [class*="threadName_"] { color: #217346 !important; font-weight: 600 !important; }
+html[data-sc-active] #app-mount [data-sc-thread-card] :is([class*="threadName_"], [class*="topLine_"] > [class*="name_"], [class*="threadMessagePreview_"], [class*="threadMessageAccessoryPreview_"]) { flex: 1 1 0% !important; }
+html[data-sc-active] #app-mount [data-sc-thread-card] :is([class*="threadName_"], [class*="topLine_"] > [class*="name_"]) { color: #217346 !important; font-weight: 600 !important; }
 html[data-sc-active] #app-mount [data-sc-thread-card] :is([class*="cta_"], [class*="messageCount_"]) { flex: 0 0 auto !important; white-space: nowrap !important; font: 11px/20px 'Segoe UI','Malgun Gothic',sans-serif !important; color: #617568 !important; }
 html[data-sc-active] #app-mount [data-sc-thread-card] [class*="username_"] { flex: 0 1 auto !important; max-width: 35% !important; }
 html[data-sc-active] #app-mount [data-sc-thread-card] .sc-media-toggle { display: inline-block !important; flex: 0 0 auto; max-width: 100%; margin: 0 !important; padding: 0 !important; }
@@ -1640,3 +1640,10 @@ html[data-sc-active][data-sc-show-avatars="false"] #app-mount [data-sc-thread-ca
 html[data-sc-active][data-sc-show-avatars="true"] #app-mount [data-sc-thread-card] [data-sc-avatar] { position: static !important; width: 16px !important; height: 16px !important; flex: 0 0 16px !important; margin: 0 !important; }
 html[data-sc-active] #app-mount [data-sc-thread-card]:hover { background: #f3f7f4 !important; }
 html[data-sc-active] #app-mount [data-sc-thread-card]:focus-visible { outline: 2px solid #217346 !important; outline-offset: -2px; }
+html[data-sc-active] #app-mount [data-sc-row] :has(> [data-sc-thread-card]) > [class*="spine_"] { display: none !important; }
+html[data-sc-active] #app-mount [data-sc-thread-card] [class*="threadMessageAccessory_"]:not([data-sc-thread-card]) { display: flex !important; flex: 1 1 0% !important; gap: 6px !important; min-width: 0 !important; overflow: hidden !important; align-items: center !important; }
+html[data-sc-active] #app-mount [data-sc-thread-card] :is([class*="clanTagChiplet_"], [class*="timestamp_"]) { display: none !important; }
+html[data-sc-active] #app-mount [data-sc-thread-excerpt="collapsed"] > :is([class*="messageContent_"], [data-sc-emoji-proxy]):not([data-sc-emoji-original]) { display: -webkit-box !important; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden !important; max-height: 60px !important; }
+.sc-thread-expand { display: block; margin: 3px 0 0; padding: 0; border: 0; background: transparent; color: #217346 !important; font: 11px/20px 'Segoe UI','Malgun Gothic',sans-serif; cursor: pointer; }
+.sc-thread-expand:hover { text-decoration: underline; }
+html[data-sc-active] #app-mount [data-sc-row] [class*="hasThread_"]::after { content: none !important; display: none !important; pointer-events: none !important; }

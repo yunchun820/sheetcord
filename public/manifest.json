@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Sheetcord — 엑셀처럼 쓰는 디스코드",
   "short_name": "Sheetcord",
-  "version": "0.2.61",
+  "version": "0.2.62",
   "description": "디스코드 웹의 서버·DM을 스프레드시트 형태로 표시합니다.",
   "minimum_chrome_version": "120",
   "permissions": ["storage"],

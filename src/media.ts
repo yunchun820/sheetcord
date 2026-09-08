@@ -30,7 +30,7 @@ export class MediaController {
     const active = new Set<HTMLElement>();
     for (const row of rows) {
       const leaves = [...row.querySelectorAll<HTMLElement>(selectors.mediaLeaf)].filter(leaf =>
-        !isOwned(leaf) && !leaf.closest(`${selectors.avatar}, ${selectors.visuallyHidden}, [data-sc-avatar], [class*="avatarDecoration_"], .emoji, [class*="emoji"], [data-type="emoji"]`)
+        !isOwned(leaf) && !leaf.closest(`${selectors.avatar}, ${selectors.visuallyHidden}, [data-sc-avatar], [class*="avatarDecoration_"], [class*="clanTagChiplet_"], [class*="messageChipletContainerInner_"], img[src*="/clan-badges/"], .emoji, [class*="emoji"], [data-type="emoji"]`)
       );
       const candidates = [...new Set(leaves.map(leaf => {
         if (stickerDetails(leaf)) {

@@ -13,6 +13,7 @@ export const selectors = {
   content: '[id^="message-content-"]',
   visuallyHidden: '[class*="hiddenVisually_"], [class*="visuallyHidden_"]',
   threadName: '[class*="threadName_"]',
+  threadCard: '[role="button"][aria-roledescription="스레드 열기 버튼"], [class*="container_"]:has(> [class*="topLine_"] > [class*="name_"]):has(> [class*="bottomLine_"])',
   author: '[id^="message-username-"], [class*="username_"]',
   avatar: '[class*="avatar_"], [class*="avatarWrapper_"], [class*="avatarContainer_"], [class*="replyAvatar_"], [class*="embedAuthorIcon_"], [class*="embedFooterIcon_"], img[src*="/avatars/"], img[src*="/embed/avatars/"]',
   editor: '[role="textbox"][contenteditable="true"][data-slate-editor="true"], [role="textbox"][contenteditable="true"]',

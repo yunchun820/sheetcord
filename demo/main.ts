@@ -16,7 +16,7 @@ import { addSearchFixture } from '../tests/search-fixture';
 import { addAudioMenuFixture } from '../tests/audio-menu-fixture';
 import { addMediaDisplayFixture, addChromePolishFixture, addConcealRegressionFixture, addStickerInteractionFixture } from '../tests/media-display-fixture';
 import { addVirtualChannelFixture } from '../tests/virtual-channel-fixture';
-import { addThreadFixture } from '../tests/thread-fixture';
+import { addThreadFixture, addNativeThreadFixture } from '../tests/thread-fixture';
 
 // Offline fixture only. This page never authenticates or connects to Discord.
 const appearanceAudit = new URLSearchParams(location.search).has('appearance-audit');
@@ -45,6 +45,7 @@ const concealRegression = new URLSearchParams(location.search).has('conceal-regr
 const stickerInteraction = new URLSearchParams(location.search).has('sticker-interaction');
 const virtualChannels = new URLSearchParams(location.search).has('virtual-channels');
 const threadPreview = new URLSearchParams(location.search).has('thread-preview');
+const nativeThread = new URLSearchParams(location.search).has('native-thread');
 if (!location.pathname.startsWith('/channels/')) history.replaceState(null, '', '/channels/100/1000');
 document.body.innerHTML = fixtureMarkup();
 document.body.classList.add('demo-mode');
@@ -72,6 +73,7 @@ if (concealRegression) addConcealRegressionFixture();
 if (stickerInteraction) addStickerInteractionFixture();
 if (virtualChannels) addVirtualChannelFixture();
 if (threadPreview) addThreadFixture();
+if (nativeThread) addNativeThreadFixture();
 if (appearanceAudit) addAppearanceFixture(document.querySelector('#app-mount')!);
 if (gridAudit) document.querySelector('[data-list-id="chat-messages"]')!.insertAdjacentHTML('afterbegin',
   messageMarkup(51, '아주 긴 이름도 셀 안에서 자연스럽게 줄바꿈되는 사용자', '짧은 본문') +
