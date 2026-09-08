@@ -180,10 +180,15 @@ export class DiscordAdapter {
         || accessibleLabel(source) || cleanLabel(source.textContent);
       return label ? [{ key, label, selected: key === this.doc.defaultView?.location.pathname, source }] : [];
     });
-    const concealed = this.doc.documentElement.getAttribute('data-sc-sidebar-collapsed') === 'true'
-      || (this.doc.defaultView?.innerWidth ?? Infinity) <= 600;
-    if (entries.length || !concealed) this.channelSnapshot = { server, entries };
-    return (entries.length ? entries : this.channelSnapshot?.entries ?? []).map(entry => ({ ...entry, selected: entry.key === pathname }));
+    const merged = new Map(this.channelSnapshot?.entries.map(entry => [entry.key, entry]) ?? []);
+    for (const entry of entries) merged.set(entry.key, entry);
+    this.channelSnapshot = { server, entries: [...merged.values()] };
+    return this.channelSnapshot.entries.map(entry => ({ ...entry, selected: entry.key === pathname }));
+  }
+
+  replaceChannels(entries: ChannelEntry[]) {
+    const server = this.doc.defaultView?.location.pathname.split('/')[2] ?? '@me';
+    this.channelSnapshot = { server, entries };
   }
 
   channelLabel(surface: Surface): string {

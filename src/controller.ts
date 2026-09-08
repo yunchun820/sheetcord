@@ -7,6 +7,7 @@ import { AvatarController } from './avatars';
 import { AppearanceController } from './appearance';
 import { TabController } from './tab';
 import { PickerController } from './picker';
+import { ChannelScanner } from './channel-scan';
 import { defaults, type Settings, type SettingsStore } from './settings';
 import { WorkbookShell } from './shell';
 import theme from './theme.css?inline';
@@ -25,6 +26,7 @@ export class SheetcordController {
   private appearance = new AppearanceController();
   private tab = new TabController();
   private picker = new PickerController();
+  private channelScanner = new ChannelScanner();
   private shell: WorkbookShell | null = null;
   private style: HTMLStyleElement | null = null;
   private observer: MutationObserver | null = null;
@@ -143,6 +145,7 @@ export class SheetcordController {
         : [...this.adapter.emojiLabels(surface), ...this.appearance.emojiSources(surface.root)];
       this.emoji.sync(rows, this.settings.showEmoji, emojiSources);
       this.shell!.render(this.settings, tabs, this.adapter.channelLabel(surface), Boolean(surface.form), this.adapter.channels(surface));
+      this.scanChannels(surface);
       this.patches.prune();
     } catch {
       this.fail('화면 적용 중 문제가 생겨 원래 디스코드 화면으로 복원했습니다.');
@@ -155,6 +158,7 @@ export class SheetcordController {
     document.head.append(this.style);
     this.shell = new WorkbookShell({
       update: patch => this.updateSettings(patch),
+      scanChannels: () => { const surface = this.adapter.discover(); if (surface) this.scanChannels(surface, true); },
       collapseImages: () => { this.media.collapseAll(); this.shell?.message('이미지를 모두 접었습니다.'); },
       search: () => {
         this.patches.set(document.documentElement, 'data-sc-search-open');
@@ -162,6 +166,13 @@ export class SheetcordController {
       },
     });
     this.shell.mount();
+  }
+
+  private scanChannels(surface: Surface, force = false) {
+    const started = this.channelScanner.scan(surface.sidebar, location.pathname.split('/')[2] ?? '@me',
+      () => { const entries = this.adapter.channels(surface); this.schedule(); return entries; },
+      entries => { this.adapter.replaceChannels(entries); this.shell?.message(`채널 ${entries.length}개 확인 완료`); this.schedule(); }, force);
+    if (started) this.shell?.message('채널 목록 확인 중…');
   }
 
   private decorate(surface: Surface) {
@@ -229,6 +240,7 @@ export class SheetcordController {
   }
 
   private stop() {
+    this.channelScanner.clear();
     this.tab.clear();
     this.running = false;
     this.observer?.disconnect();

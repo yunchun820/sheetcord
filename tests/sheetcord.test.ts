@@ -453,7 +453,7 @@ describe('extension lifecycle', () => {
     await vi.waitFor(() => expect(surface().sidebar.hasAttribute('inert')).toBe(true));
     for (const link of surface().sidebar.querySelectorAll('a[href^="/channels/"]')) link.remove();
     await wait();
-    document.querySelector<HTMLButtonElement>('.sc-navigation-toggle')!.click();
+    [...document.querySelectorAll<HTMLButtonElement>('.sc-navigation-toggle')].find(button => button.textContent === '삽입')!.click();
     document.querySelector<HTMLButtonElement>('[data-sc-navigation-key="channels"]')!.click();
     const navigate = vi.spyOn(window.location, 'assign').mockImplementation(() => {});
     document.querySelector<HTMLButtonElement>('[data-sc-navigation-key="/channels/100/1003"]')!.click();
@@ -464,11 +464,14 @@ describe('extension lifecycle', () => {
     const store = new MemoryStore({ sidebarCollapsed: true });
     controller = new SheetcordController(store);
     await controller.start();
-    await vi.waitFor(() => expect(document.querySelectorAll('.sc-navigation-toggle')).toHaveLength(1));
-    const insert = document.querySelector<HTMLButtonElement>('.sc-navigation-toggle')!;
+    await vi.waitFor(() => expect(document.querySelectorAll('.sc-navigation-toggle')).toHaveLength(2));
+    const openers = [...document.querySelectorAll<HTMLButtonElement>('.sc-navigation-toggle')];
+    const insert = openers.find(button => button.textContent === '삽입')!;
+    const file = openers.find(button => button.textContent === '파일')!;
     expect([...document.querySelector('.sc-menubar')!.children].slice(0, 4).map(node => node.textContent)).toEqual(['파일', '홈', '삽입', '페이지 레이아웃']);
     const open = (key: string) => {
-      insert.click();
+      (key === 'servers' ? file : insert).click();
+      expect(document.querySelectorAll('.sc-navigation-item')).toHaveLength(1);
       document.querySelector<HTMLButtonElement>(`[data-sc-navigation-key="${key}"]`)!.click();
     };
     open('servers');

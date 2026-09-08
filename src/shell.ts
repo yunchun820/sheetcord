@@ -8,6 +8,7 @@ interface Actions {
   update(patch: Partial<Settings>): void;
   collapseImages(): void;
   search(): void;
+  scanChannels?(): void;
 }
 
 function text(tag: 'span' | 'div' | 'strong', value: string, className = '') {
@@ -37,9 +38,10 @@ export class WorkbookShell {
   private helpCleanup: (() => void) | null = null;
   private helpOpener: HTMLElement | null = null;
   private statusTimer = 0;
-  private insertMenu = new NavigationMenu('삽입', () => { this.serverMenu.close(false); this.channelMenu.close(false); this.closeHelp(false); });
-  private serverMenu = new NavigationMenu('서버 목록', () => { this.insertMenu.close(false); this.channelMenu.close(false); this.closeHelp(false); }, () => this.insertMenu.opener);
-  private channelMenu = new NavigationMenu('채널 목록', () => { this.insertMenu.close(false); this.serverMenu.close(false); this.closeHelp(false); }, () => this.insertMenu.opener);
+  private insertMenu = new NavigationMenu('삽입', () => { this.fileMenu.close(false); this.serverMenu.close(false); this.channelMenu.close(false); this.closeHelp(false); });
+  private fileMenu = new NavigationMenu('파일', () => { this.insertMenu.close(false); this.serverMenu.close(false); this.channelMenu.close(false); this.closeHelp(false); });
+  private serverMenu = new NavigationMenu('서버 목록', () => { this.fileMenu.close(false); this.insertMenu.close(false); this.channelMenu.close(false); this.closeHelp(false); }, () => this.fileMenu.opener);
+  private channelMenu = new NavigationMenu('채널 목록', () => { this.fileMenu.close(false); this.insertMenu.close(false); this.serverMenu.close(false); this.closeHelp(false); this.actions.scanChannels?.(); }, () => this.insertMenu.opener);
 
   constructor(private actions: Actions) {
     this.header.setAttribute('aria-label', 'Sheetcord 도구 모음');
@@ -51,13 +53,16 @@ export class WorkbookShell {
     const menu = owned('div', 'sc-menubar');
     // Familiar ribbon labels are visual headings, not pretend file-editing controls.
     for (const [index, label] of ['파일', '홈', '삽입', '페이지 레이아웃', '수식', '데이터', '검토', '보기'].entries()) {
+      if (label === '파일') { menu.append(this.fileMenu.opener); continue; }
       if (label === '삽입') { menu.append(this.insertMenu.opener); continue; }
       const item = text('span', label, `sc-menu-label${index === 1 ? ' is-active' : ''}`);
       item.setAttribute('aria-hidden', 'true');
       menu.append(item);
     }
-    this.insertMenu.update([
+    this.fileMenu.update([
       { key: 'servers', label: '서버 목록', selected: false, activate: () => this.serverMenu.open() },
+    ]);
+    this.insertMenu.update([
       { key: 'channels', label: '채널 목록', selected: false, activate: () => this.channelMenu.open() },
     ]);
     menu.append(button('사용 안내', () => this.toggleHelp(), 'sc-help-link'));
@@ -231,6 +236,7 @@ export class WorkbookShell {
   }
 
   private toggleHelp() {
+    this.fileMenu.close(false);
     if (this.help) { this.closeHelp(); return; }
     this.serverMenu.close(false);
     this.channelMenu.close(false);
@@ -244,7 +250,7 @@ export class WorkbookShell {
     panel.append(text('strong', 'Sheetcord 사용 안내'));
     for (const line of [
       '아래 시트: 서버 이동 · 첫 시트: 개인 메시지',
-      '삽입 → 서버 목록·채널 목록: 검색해서 대화로 이동',
+      '파일 → 서버 목록 · 삽입 → 채널 목록: 검색해서 이동',
       '왼쪽 목록: 채널 선택 · 상단 입력줄: 메시지 작성',
       'Enter로 전송, Shift+Enter로 줄바꿈합니다.',
       '프로필 사진·이모지 표시 설정은 저장됩니다.',
@@ -278,6 +284,7 @@ export class WorkbookShell {
   }
 
   destroy() {
+    this.fileMenu.close(false);
     this.insertMenu.close(false);
     this.serverMenu.close(false);
     this.channelMenu.close(false);

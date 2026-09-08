@@ -1596,3 +1596,5 @@ html[data-sc-active] #app-mount [data-sc-row] [data-sc-sticker][data-sc-media="e
   padding: 0 !important; margin: 0 !important; border: 0 !important; background: transparent !important;
   position: static !important; transform: none !important;
 }
+/* Conceal scan motion while preserving the native virtual list's measurable viewport. */
+html[data-sc-active] #app-mount [data-sc-channel-scanning] { opacity: 0 !important; }
