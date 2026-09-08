@@ -1,5 +1,6 @@
-import { button, isOwned } from './dom';
-import { selectors } from './adapter';
+import { button, isOwned, DomPatches } from './dom';
+import { selectors, expressionName } from './adapter';
+import { emojiText } from './emoji';
 
 interface MediaEntry { target: HTMLElement; control: HTMLButtonElement; key: string; expanded: boolean }
 
@@ -9,6 +10,8 @@ export class MediaController {
   private collapsedKeys = new Set<string>();
   private route = '';
   private showImages = false;
+  private layouts = new Set<HTMLElement>();
+  private patches = new DomPatches();
 
   constructor(private onChange: () => void = () => {}) {}
 
@@ -31,7 +34,7 @@ export class MediaController {
       }
     }
     for (const row of rows) {
-      const leaves = [...row.querySelectorAll<HTMLElement>('img, video')].filter(leaf =>
+      const leaves = [...row.querySelectorAll<HTMLElement>(selectors.mediaLeaf)].filter(leaf =>
         !isOwned(leaf) && !leaf.closest(`${selectors.avatar}, [data-sc-avatar], [class*="avatarDecoration_"], .emoji, [class*="emoji"], [data-type="emoji"]`)
       );
       const candidates = [...new Set(leaves.map(leaf => {
@@ -57,13 +60,30 @@ export class MediaController {
         this.render(entry);
       });
     }
+    this.syncLayouts();
+  }
+
+  private syncLayouts() {
+    const current = new Map<HTMLElement, boolean>();
+    for (const { target, expanded } of this.entries.values()) {
+      for (let parent = target.parentElement; parent && !parent.matches(selectors.row); parent = parent.parentElement) {
+        if (parent.matches(selectors.mediaLayout)) current.set(parent, Boolean(current.get(parent) || (this.showImages && expanded)));
+      }
+    }
+    for (const old of this.layouts) if (!current.has(old)) this.patches.reset(old, 'data-sc-media-layout');
+    for (const [layout, expanded] of current) {
+      this.patches.set(layout, 'data-sc-media-layout', expanded ? 'expanded' : 'compact');
+    }
+    this.layouts = new Set(current.keys());
   }
 
   private render(entry: MediaEntry) {
     const value = !this.showImages ? 'hidden' : entry.expanded ? 'expanded' : 'collapsed';
     if (entry.target.dataset.scMedia !== value) entry.target.dataset.scMedia = value;
-    const kind = entry.target.matches('video') || entry.target.querySelector('video') ? '영상' : '이미지';
-    const label = !this.showImages ? `${kind} 숨김` : entry.expanded ? `− ${kind} 접기` : `+ ${kind} 펼치기`;
+    const sticker = entry.target.matches('[class*="sticker"]') || entry.target.closest('[class*="sticker"]');
+    const kind = sticker ? '스티커' : entry.target.matches('video') || entry.target.querySelector('video') ? '영상' : '이미지';
+    const name = sticker && !entry.target.closest('[class*="spoiler"]') ? emojiText(expressionName(entry.target, '스티커')) : '';
+    const label = !this.showImages ? (name && name !== kind ? `[${kind}: ${name}]` : `${kind} 숨김`) : entry.expanded ? `− ${kind} 접기` : `+ ${kind} 펼치기`;
     if (entry.control.textContent !== label) entry.control.textContent = label;
     entry.control.disabled = !this.showImages;
     entry.control.title = !this.showImages ? '리본의 이미지 표시를 켜면 볼 수 있습니다.' : '';
@@ -97,6 +117,7 @@ export class MediaController {
       if (entry.expanded) this.collapsedKeys.delete(entry.key);
       else this.collapsedKeys.add(entry.key);
       this.render(entry);
+      this.syncLayouts();
     });
   }
 
@@ -108,6 +129,7 @@ export class MediaController {
         this.collapsedKeys.add(entry.key);
         this.render(entry);
       }
+      this.syncLayouts();
     });
   }
 
@@ -118,5 +140,7 @@ export class MediaController {
     }
     this.entries.clear();
     this.collapsedKeys.clear();
+    this.patches.restore();
+    this.layouts.clear();
   }
 }

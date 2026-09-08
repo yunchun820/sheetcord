@@ -6,6 +6,7 @@ import { MessageGrid } from './messages';
 import { AvatarController } from './avatars';
 import { AppearanceController } from './appearance';
 import { TabController } from './tab';
+import { PickerController } from './picker';
 import { defaults, type Settings, type SettingsStore } from './settings';
 import { WorkbookShell } from './shell';
 import theme from './theme.css?inline';
@@ -23,6 +24,7 @@ export class SheetcordController {
   private avatars = new AvatarController();
   private appearance = new AppearanceController();
   private tab = new TabController();
+  private picker = new PickerController();
   private shell: WorkbookShell | null = null;
   private style: HTMLStyleElement | null = null;
   private observer: MutationObserver | null = null;
@@ -131,6 +133,7 @@ export class SheetcordController {
       if (!this.shell) this.mount();
       this.tab.start(this.settings.tabTitle);
       this.decorate(surface);
+      this.picker.sync(surface.root, this.settings.showImages, this.settings.showEmoji);
       this.appearance.sync(surface.root);
       const rows = this.adapter.rows(surface);
       this.grid.sync(rows, location.pathname, this.settings.showEmoji);
@@ -230,6 +233,7 @@ export class SheetcordController {
     window.removeEventListener('popstate', this.schedule);
     window.removeEventListener('resize', this.schedule);
     this.emoji.clear();
+    this.picker.clear();
     this.appearance.clear();
     this.avatars.clear();
     this.media.clear();

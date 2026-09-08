@@ -1,5 +1,6 @@
 import { allNative, DomPatches, isOwned, owned } from './dom';
 import emojiRegex from 'emoji-regex';
+import { selectors } from './adapter';
 
 const mediaControl = (control: HTMLElement) => Boolean(control.closest('[class*="imageWrapper"], [class*="videoWrapper_"], [class*="embedThumbnail_"]') || control.querySelector('[class*="loadingOverlay_"], video, canvas'));
 const formIconControl = '[data-sc-form] [class*="prefixElement_"] [role="button"][class*="iconLayout_"][aria-hidden="false"]';
@@ -10,7 +11,7 @@ export class AppearanceController {
   private labels = new Map<HTMLElement, HTMLElement>();
 
   sync(root: HTMLElement) {
-    for (const [control, label] of this.labels) if (!control.isConnected || !root.contains(control) || mediaControl(control)) {
+    for (const [control, label] of this.labels) if (!control.isConnected || !root.contains(control) || mediaControl(control) || control.closest(selectors.expressionPicker)) {
       label.remove();
       this.patches.reset(control, 'data-sc-text-control');
       this.labels.delete(control);
@@ -18,6 +19,7 @@ export class AppearanceController {
     for (const control of allNative<HTMLElement>(root, `button[aria-label], [role="button"][aria-label], [role="menuitem"] [aria-label], [data-sc-form] [aria-label], [role="button"][class*="reactionBtn_"], [class*="panels_"] button[aria-describedby], [class*="panels_"] [class*="clickablePing_"], ${formIconControl}`)) {
       if (control.closest('[data-sc-guilds], [data-sc-sidebar] a, [contenteditable="true"]')) continue;
       if (mediaControl(control)) continue;
+      if (control.closest(selectors.expressionPicker)) continue;
       const nativeText = [...control.childNodes].filter(node => !isOwned(node)).map(node => node.textContent).join('').trim();
       const accountControl = control.matches('[class*="accountPopoutButton_"]');
       if (!accountControl && (nativeText || !control.querySelector('svg, img, [class*="spriteContainer_"]'))) continue;
@@ -49,6 +51,7 @@ export class AppearanceController {
       if (!pattern.test(node.textContent ?? '')) continue;
       const element = node.parentElement;
       if (!element || sources.has(element) || isOwned(element)) continue;
+      if (element.closest('[data-sc-picker-label]')) continue;
       if (element.closest('script, style, textarea, input, [contenteditable="true"], [data-sc-guilds]')) continue;
       if (element.querySelector('input, textarea, select, [contenteditable="true"]')) continue;
       sources.add(element);

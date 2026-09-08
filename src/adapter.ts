@@ -18,6 +18,10 @@ export const selectors = {
   header: 'section[aria-label][class*="title_"], [class*="title_"][class*="container_"]',
   members: '[class*="membersWrap_"]',
   attachment: '[class*="imageWrapper_"], [class*="imageContainer_"], [class*="embedImage_"], [class*="embedThumbnail_"]',
+  mediaLeaf: 'img, video, canvas, [class*="stickerAsset_"]',
+  mediaLayout: '[class*="mosaic"], [class*="accessories_"], [class*="stickerContainer_"], [class*="stickerWrapper_"], [class*="attachmentContainer_"], [class*="mediaContainer_"]',
+  expressionPicker: '#emoji-picker-tab-panel, #sticker-picker-tab-panel, #gif-picker-tab-panel, [class*="emojiPicker_"], [class*="stickerPicker_"], [class*="gifPicker_"]',
+  expressionItem: '[class*="emojiItem_"], [class*="sticker_"][role="button"], [class*="stickerNode_"], [class*="stickerAsset_"], [class*="result_"], [role="gridcell"], button:has(img, video, canvas), [role="button"]:has(img, video, canvas)',
   reaction: '[class*="reaction_"][role="button"], button[class*="reaction_"], [class*="reaction_"]',
   search: '[role="searchbox"], [contenteditable="true"][data-slate-editor="true"][aria-label*="검색"], [class*="searchBar_"] [contenteditable="true"], [class*="searchBar_"] input',
 };
@@ -51,10 +55,23 @@ function cleanLabel(value: string | null | undefined): string {
   return (value ?? '').replace(/[\u200B\u200E\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
 }
 
-function accessibleLabel(element: Element): string {
+export function accessibleLabel(element: Element): string {
   const referenced = (element.getAttribute('aria-labelledby') ?? '').split(/\s+/)
     .filter(Boolean).map(id => cleanLabel(element.ownerDocument.getElementById(id)?.textContent)).filter(Boolean).join(' ');
   return referenced || cleanLabel(element.getAttribute('aria-label')) || cleanLabel(element.getAttribute('title'));
+}
+
+/** Read names already exposed by the page; never derive labels from signed media URLs. */
+export function expressionName(element: Element, fallback: string): string {
+  const direct = cleanLabel(element.getAttribute('data-name')) || accessibleLabel(element);
+  if (direct) return direct;
+  for (const child of [element, ...element.querySelectorAll('[data-name], [alt], [aria-label], [aria-labelledby], [title]')]) {
+    const name = cleanLabel(child.getAttribute('data-name')) || accessibleLabel(child) || cleanLabel(child.getAttribute('alt'));
+    if (name) return name;
+  }
+  const nativeText = [...element.childNodes].filter(node => !(node instanceof Element && node.hasAttribute('data-sc-owned')))
+    .map(node => node.textContent).join(' ');
+  return cleanLabel(nativeText) || fallback;
 }
 
 function guildLabel(source: HTMLElement): string {
