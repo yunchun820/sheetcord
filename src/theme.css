@@ -608,6 +608,41 @@ html[data-sc-active] #app-mount [data-sc-sidebar] [class*="basicChannelRowLink_"
 }
 html[data-sc-active] #app-mount [data-sc-sidebar] [class*="basicChannelRowLink_"] [class*="name_"] { visibility: visible !important; }
 html[data-sc-active] #app-mount [data-sc-sidebar] [class*="basicChannelRowLink_"] svg { display: none !important; }
+/* Sidebar threads and forum posts are native button rows, not channel anchors. */
+html[data-sc-active] #app-mount [data-sc-sidebar] :is([class*="spine_"], [class*="spineBorder_"]) { display: none !important; }
+html[data-sc-active] #app-mount [data-sc-sidebar] [class*="typeThread_"] {
+  margin: 0 0 0 20px !important; padding: 1px 0 !important; min-width: 0 !important;
+  border-left: 1px solid #cbd8cf; box-sizing: border-box;
+}
+html[data-sc-active] #app-mount [data-sc-sidebar] [class*="typeThread_"] > [class*="link_"] {
+  display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: flex-start !important; box-sizing: border-box !important;
+  height: 28px !important; min-height: 28px !important; min-width: 0 !important;
+  margin: 0 !important; padding: 4px 10px !important; border: 0 !important;
+  border-bottom: 1px solid #e0e5e2 !important; border-radius: 0 !important;
+  background: #f7f9f7 !important; color: #405747 !important;
+  font: 12px/20px 'Segoe UI','Malgun Gothic',sans-serif !important;
+}
+html[data-sc-active] #app-mount [data-sc-sidebar] [class*="typeThread_"] [class*="linkTop_"] {
+  flex: 1 1 0% !important; min-width: 0 !important; gap: 4px !important;
+  width: 100% !important; max-width: 100% !important; justify-content: flex-start !important;
+  box-sizing: border-box !important;
+}
+html[data-sc-active] #app-mount [data-sc-sidebar] [class*="typeThread_"] [class*="name_"] {
+  flex: 1 1 0% !important; min-width: 0 !important;
+}
+html[data-sc-active] #app-mount [data-sc-sidebar] [class*="typeThread_"] :is([class*="name_"], [data-text-variant]) {
+  overflow: hidden !important; white-space: nowrap !important; text-overflow: ellipsis !important;
+  max-width: 100% !important; line-height: 20px !important;
+}
+html[data-sc-active] #app-mount [data-sc-sidebar] [class*="typeThread_"] > [class*="link_"]:hover { background: #edf3ee !important; }
+html[data-sc-active] #app-mount [data-sc-sidebar] [class*="typeThread_"]:is([class*="modeSelected_"], [class*="selected_"]) > [class*="link_"],
+html[data-sc-active] #app-mount [data-sc-sidebar] [class*="typeThread_"] > :is([aria-selected="true"], [aria-current="page"]) {
+  background: #e0ece4 !important; box-shadow: inset 2px 0 #217346 !important; color: #185c37 !important;
+}
+html[data-sc-active] #app-mount [data-sc-sidebar] [class*="typeThread_"] > [class*="link_"]:focus-visible {
+  outline: 2px solid #217346 !important; outline-offset: -2px;
+}
+html[data-sc-active] #app-mount [data-sc-sidebar] [class*="typeThread_"][class*="modeUnread_"] :is([class*="name_"], [class*="name_"] *) { font-weight: 600 !important; color: #217346 !important; }
 html[data-sc-active] #app-mount [class*="panels_"] { min-height: 0 !important; height: auto !important; padding: 4px !important; }
 html[data-sc-active] #app-mount [class*="panels_"] > [class*="container_"] { min-height: 0 !important; height: auto !important; padding: 0 !important; }
 /* Native attachment wrappers reserve 24 px vertically around a 32 px icon. */

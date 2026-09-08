@@ -45,3 +45,39 @@ export function addDarkSidebarFixture() {
   `;
   document.head.append(style);
 }
+
+export function addSidebarThreadsFixture() {
+  const navigation = document.querySelector<HTMLElement>('.sidebarList_fixture')!;
+  const heading = navigation.querySelector('.workspace-heading')!;
+  const account = navigation.querySelector('.sidebar-footnote')!;
+  navigation.replaceChildren(heading, account);
+  for (const [index, label] of ['자료 모음', '일반'].entries()) {
+    const section = document.createElement('div');
+    section.innerHTML = `<a class="channel-link link_fixture" href="/channels/100/${1000 + index}"><span class="name_fixture">${label}</span></a>
+      <ul role="group" aria-label="${label} 스레드"><div class="spineBorder_fixture"></div>${['주간 작업 기록', '긴 제목의 포스트가 옆으로 잘리지 않고 자연스러운 말줄임표로 표시되는지 확인합니다', '읽지 않은 항목'].map((name, i) => `
+        <li class="containerDefault_fixture"><svg class="spine_fixture" width="10" height="19"></svg><div class="wrapper_fixture typeThread_fixture ${i === 0 ? 'modeSelected_fixture' : i === 2 ? 'modeUnread_fixture' : ''}">
+          <div class="link_fixture" role="button" tabindex="0" aria-label="${name} (스레드)" data-list-item-id="channels___${1100 + index * 10 + i}"><div class="linkTop_fixture"><div class="name_fixture"><div data-text-variant="text-sm/medium">${name}</div></div><div class="children_fixture"></div></div></div>
+        </div></li>`).join('')}</ul>`;
+    account.before(section);
+  }
+  const status = document.createElement('p'); status.setAttribute('role', 'status');
+  status.textContent = '선택 전'; account.before(status);
+  navigation.addEventListener('click', event => {
+    const target = (event.target as Element).closest<HTMLElement>('[data-list-item-id]');
+    if (!target) return;
+    navigation.querySelectorAll('.modeSelected_fixture').forEach(e => e.classList.remove('modeSelected_fixture'));
+    target.parentElement!.classList.add('modeSelected_fixture');
+    status.textContent = target.getAttribute('aria-label');
+  });
+  const style = document.createElement('style');
+  style.textContent = `.sidebarList_fixture ul{list-style:none;padding:0;margin:0;position:relative}
+    .sidebarList_fixture .spineBorder_fixture{position:absolute;left:24px;top:0;bottom:24px;border-left:2px solid #444}
+    .sidebarList_fixture .containerDefault_fixture{height:30px;position:relative}
+    .sidebarList_fixture .spine_fixture{position:absolute;left:24px}
+    .sidebarList_fixture .typeThread_fixture{margin-left:36px;padding:1px 0}
+    .sidebarList_fixture .typeThread_fixture>.link_fixture{display:flex;flex-direction:column;align-items:center;height:28px;padding:4px 8px}
+    .sidebarList_fixture .linkTop_fixture{display:flex;width:100%}
+    .sidebarList_fixture .name_fixture{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    .sidebarList_fixture .typeThread_fixture [data-text-variant]{font-size:14px;line-height:20px}`;
+  document.head.append(style);
+}
