@@ -54,3 +54,14 @@ export function addNativeThreadFixture() {
   const content = document.getElementById('message-content-201')!;
   content.textContent = Array.from({length:12},(_,i)=>`[13:${String(i).padStart(2,'0')}] 작성자: 인용된 실제 본문은 그대로 유지합니다.`).join('\n');
 }
+
+/** Native bot attachment preview, with synthetic author and artwork only. */
+export function addBotThreadFixture() {
+  addNativeThreadFixture();
+  const accessory = document.querySelector('.threadMessageAccessory_native')!;
+  accessory.querySelector('.username_thread')!.insertAdjacentHTML('beforebegin', '<span role="img" aria-label="앱" class="botTagCompact_native botTag_native botTagRegular_native"><span class="botText_native">앱</span></span>');
+  accessory.querySelector('.threadMessageAccessoryPreview_native')!.innerHTML = '<span class="threadMessageAccessoryPlaceholder_native">첨부 파일을 보려면 클릭하세요</span><svg class="threadMessageAccessoryContentTrailingIcon_native" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M3 3h18v18H3z"/></svg>';
+  const style = document.createElement('style');
+  style.textContent = '.botTag_native{display:flex;align-items:center;background:#5865f2;color:white;border-radius:3px;height:15px;padding:0 4px;position:relative;top:1px}.botText_native{font-size:10px}.threadMessageAccessoryPreview_native{display:flex;align-items:center}.threadMessageAccessoryPlaceholder_native{font-style:italic}';
+  document.head.append(style);
+}

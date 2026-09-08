@@ -1647,3 +1647,28 @@ html[data-sc-active] #app-mount [data-sc-thread-excerpt="collapsed"] > :is([clas
 .sc-thread-expand { display: block; margin: 3px 0 0; padding: 0; border: 0; background: transparent; color: #217346 !important; font: 11px/20px 'Segoe UI','Malgun Gothic',sans-serif; cursor: pointer; }
 .sc-thread-expand:hover { text-decoration: underline; }
 html[data-sc-active] #app-mount [data-sc-row] [class*="hasThread_"]::after { content: none !important; display: none !important; pointer-events: none !important; }
+
+/* Native app badges keep their label, using the worksheet's muted green palette. */
+html[data-sc-active] #app-mount [data-sc-row] [class*="botTag_"] {
+  display: inline-flex !important; align-items: center !important; flex: 0 0 auto !important; gap: 2px !important;
+  position: static !important; inset: auto !important; transform: none !important;
+  box-sizing: border-box !important; height: 16px !important; min-height: 0 !important;
+  padding: 0 4px !important; margin: 0 !important; border: 1px solid #cbd8ce !important; border-radius: 0 !important;
+  background: #edf4ef !important; color: #42634d !important; box-shadow: none !important;
+  font: 10px/14px 'Segoe UI','Malgun Gothic',sans-serif !important; white-space: nowrap !important;
+  vertical-align: middle !important;
+}
+html[data-sc-active] #app-mount [data-sc-row] [class*="botTag_"] [class*="botText_"] {
+  color: inherit !important; font: inherit !important; position: static !important; transform: none !important;
+}
+html[data-sc-active] #app-mount [data-sc-row] [class*="botTag_"] svg {
+  width: 12px !important; height: 12px !important; flex: 0 0 12px !important; color: inherit !important;
+}
+html[data-sc-active] #app-mount [data-sc-thread-card] [class*="threadMessageAccessoryPlaceholder_"] {
+  flex: 1 1 0% !important; min-width: 0 !important; overflow: hidden !important;
+  white-space: nowrap !important; text-overflow: ellipsis !important;
+  font: 12px/20px 'Segoe UI','Malgun Gothic',sans-serif !important; color: #617568 !important;
+}
+html[data-sc-active] #app-mount [data-sc-thread-card] [class*="threadMessageAccessoryContentTrailingIcon_"] {
+  width: 12px !important; height: 12px !important; flex: 0 0 12px !important; margin: 0 0 0 4px !important; color: #617568 !important;
+}
