@@ -1,6 +1,7 @@
 import type { GuildTab, ChannelEntry } from './adapter';
 import { button, owned } from './dom';
 import { emojiText } from './emoji';
+import { NavigationMenu, type NavigationEntry } from './navigation';
 import type { Settings } from './settings';
 
 interface Actions {
@@ -37,6 +38,8 @@ export class WorkbookShell {
   private helpCleanup: (() => void) | null = null;
   private helpOpener: HTMLElement | null = null;
   private statusTimer = 0;
+  private serverMenu = new NavigationMenu('서버 목록', () => { this.channelMenu.close(false); this.closeHelp(false); });
+  private channelMenu = new NavigationMenu('채널 목록', () => { this.serverMenu.close(false); this.closeHelp(false); });
 
   constructor(private actions: Actions) {
     this.header.setAttribute('aria-label', 'Sheetcord 도구 모음');
@@ -51,6 +54,7 @@ export class WorkbookShell {
       const item = text('span', label, `sc-menu-label${index === 1 ? ' is-active' : ''}`);
       item.setAttribute('aria-hidden', 'true');
       menu.append(item);
+      if (index === 1) menu.append(this.serverMenu.opener, this.channelMenu.opener);
     }
     menu.append(button('사용 안내', () => this.toggleHelp(), 'sc-help-link'));
     const ribbon = owned('div', 'sc-ribbon');
@@ -80,7 +84,7 @@ export class WorkbookShell {
     this.imageButton = tool('▧', '이미지 표시', () => toggle(this.imageButton, 'showImages'));
     this.collapseImagesButton = tool('−', '이미지 모두 접기', () => actions.collapseImages());
     group('콘텐츠 표시', [this.avatarButton, this.imageButton, this.emojiButton, this.collapseImagesButton]).classList.add('sc-display-controls');
-    this.sidebarButton = tool('◧', '채널 목록', () => {
+    this.sidebarButton = tool('◧', '채널 창', () => {
       const visible = this.sidebarButton.getAttribute('aria-pressed') !== 'true';
       this.sidebarButton.setAttribute('aria-pressed', String(visible));
       actions.update({ sidebarCollapsed: !visible });
@@ -135,6 +139,14 @@ export class WorkbookShell {
 
   render(settings: Settings, tabs: GuildTab[], channel: string, hasEditor: boolean, channels: ChannelEntry[] = []) {
     this.channelSources = new Map(channels.map(entry => [entry.key, entry.source]));
+    this.tabSources = new Map(tabs.map(tab => [tab.key, tab.source]));
+    const serverEntries: NavigationEntry[] = tabs.map(tab => ({ ...tab, label: settings.showEmoji ? tab.label : emojiText(tab.label), activate: () => this.tabSources.get(tab.key)?.click() }));
+    if (!tabs.some(tab => tab.key === '@me')) serverEntries.unshift({
+      key: '@me', label: '개인 메시지', selected: location.pathname.startsWith('/channels/@me'), unread: false, folder: false,
+      activate: () => { location.assign('/channels/@me'); },
+    });
+    this.serverMenu.update(serverEntries);
+    this.channelMenu.update(channels.map(entry => ({ ...entry, label: settings.showEmoji ? entry.label : emojiText(entry.label), activate: () => this.channelSources.get(entry.key)?.click() })));
     const channelSignature = JSON.stringify([settings.showEmoji, channels.map(({ source: _source, ...entry }) => entry)]);
     if (channelSignature !== this.channelSignature) {
       this.channelSignature = channelSignature;
@@ -161,7 +173,6 @@ export class WorkbookShell {
     this.title.textContent = `${settings.showEmoji ? channel : emojiText(channel)} — 커뮤니케이션.xlsx`;
     this.columnCorner.textContent = location.pathname.startsWith('/channels/@me') ? '개인 메시지' : '채널';
     this.formulaHint.hidden = hasEditor;
-    this.tabSources = new Map(tabs.map(tab => [tab.key, tab.source]));
     const signature = JSON.stringify([settings.showEmoji, tabs.map(({ source: _source, ...tab }) => tab)]);
     if (signature === this.tabSignature) return;
     this.tabSignature = signature;
@@ -215,6 +226,8 @@ export class WorkbookShell {
 
   private toggleHelp() {
     if (this.help) { this.closeHelp(); return; }
+    this.serverMenu.close(false);
+    this.channelMenu.close(false);
     this.helpOpener = this.header.querySelector<HTMLElement>('.sc-help-link');
     this.helpOpener?.setAttribute('aria-expanded', 'true');
     this.helpOpener?.setAttribute('aria-haspopup', 'dialog');
@@ -224,6 +237,7 @@ export class WorkbookShell {
     panel.append(text('strong', 'Sheetcord 사용 안내'));
     for (const line of [
       '아래 시트: 서버 이동 · 첫 시트: 개인 메시지',
+      '상단 서버 목록·채널 목록: 검색해서 대화로 이동',
       '왼쪽 목록: 채널 선택 · 상단 입력줄: 메시지 작성',
       'Enter로 전송, Shift+Enter로 줄바꿈합니다.',
       '프로필 사진·이모지·이미지는 각각 켜거나 끌 수 있으며 설정이 저장됩니다.',
@@ -257,6 +271,8 @@ export class WorkbookShell {
   }
 
   destroy() {
+    this.serverMenu.close(false);
+    this.channelMenu.close(false);
     clearTimeout(this.statusTimer);
     this.header.remove();
     this.bottom.remove();

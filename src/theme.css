@@ -35,7 +35,21 @@ html[data-sc-sidebar-collapsed="true"] { --sc-sidebar: 0px; }
 .sc-title-separator { opacity: .35; }
 .sc-workbook-name { font-size: 12px; opacity: .95; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sc-connected { margin-left: auto; flex-shrink: 0; font-size: 11px; opacity: .85; }
-.sc-menubar { height: 30px; display: flex; align-items: stretch; padding: 0 12px; border-bottom: 1px solid #e1e6e1; background: #fff; gap: 4px; }
+.sc-menubar { height: 30px; display: flex; align-items: stretch; padding: 0 12px; border-bottom: 1px solid #e1e6e1; background: #fff; gap: 4px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.sc-menubar > * { flex-shrink: 0; }
+.sc-navigation-toggle { border: 0; background: transparent; border-radius: 0 !important; }
+.sc-navigation-toggle:hover, .sc-navigation-toggle[aria-expanded="true"] { background: #e4eee7; color: #185c37; }
+.sc-navigation-panel { position: fixed; z-index: 160; width: min(330px, calc(100vw - 16px)); display: flex; flex-direction: column; padding: 10px; gap: 8px; background: #fff; border: 1px solid #b6c9bd; box-shadow: 0 5px 16px #16392222; color: #243329; font: 12px/1.5 'Segoe UI', 'Malgun Gothic', sans-serif; }
+.sc-navigation-heading { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.sc-navigation-heading button { background: transparent; border: 0; color: #526859; font: inherit; padding: 3px 6px; cursor: pointer; }
+.sc-navigation-search { width: 100%; min-height: 32px; flex-shrink: 0; border: 1px solid #c4d2c8; border-radius: 0; padding: 5px 8px; background: white; color: inherit; font: inherit; }
+.sc-navigation-items { min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
+.sc-navigation-item { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 34px; padding: 7px 9px; border: 0; border-bottom: 1px solid #e1e8e3; background: white; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.sc-navigation-item > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.sc-navigation-item:hover, .sc-navigation-item[aria-current="page"] { background: #e3efe7; color: #185c37; }
+.sc-navigation-unread { margin-left: auto; color: #217346; }
+.sc-navigation-empty { margin: 8px; color: #718178; }
+.sc-navigation-panel :is(button, input):focus-visible { outline: 2px solid #217346; outline-offset: -2px; }
 .sc-menu-label { padding: 6px 13px; color: #4b554e; white-space: nowrap; }
 .sc-menu-label.is-active { color: #217346; border-bottom: 2px solid #217346; font-weight: 600; }
 .sc-help-link { margin-left: auto; border: 0; background: transparent; font-size: 11px !important; padding: 0 12px; color: #65736a !important; }

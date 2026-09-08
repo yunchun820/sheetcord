@@ -431,6 +431,30 @@ describe('presentation controls preserve native data and actions', () => {
 });
 
 describe('extension lifecycle', () => {
+  it('opens top navigation menus with native server and channel actions while the sidebar is collapsed', async () => {
+    const store = new MemoryStore({ sidebarCollapsed: true });
+    controller = new SheetcordController(store);
+    await controller.start();
+    await vi.waitFor(() => expect(document.querySelectorAll('.sc-navigation-toggle')).toHaveLength(2));
+    const openers = document.querySelectorAll<HTMLButtonElement>('.sc-navigation-toggle');
+    expect([...document.querySelector('.sc-menubar')!.children].slice(0, 4).map(node => node.textContent)).toEqual(['파일', '홈', '서버 목록', '채널 목록']);
+    openers[0].click();
+    expect(document.querySelector('.sc-navigation-item')!.textContent).toBe('개인 메시지');
+    const source = document.querySelector<HTMLElement>('[data-list-item-id="guildsnav___200"]')!;
+    const selected = vi.fn(); source.addEventListener('click', selected);
+    document.querySelector<HTMLButtonElement>('[data-sc-navigation-key="200"]')!.click();
+    expect(selected).toHaveBeenCalledTimes(1);
+    openers[1].click();
+    const link = document.querySelector<HTMLAnchorElement>('[data-sc-sidebar] a[href="/channels/100/1003"]')!;
+    const channelSelected = vi.fn(event => event.preventDefault()); link.addEventListener('click', channelSelected);
+    document.querySelector<HTMLButtonElement>('[data-sc-navigation-key="/channels/100/1003"]')!.click();
+    expect(channelSelected).toHaveBeenCalledTimes(1);
+    openers[0].click(); openers[1].click();
+    expect(document.querySelectorAll('.sc-navigation-panel')).toHaveLength(1);
+    expect(openers[0].getAttribute('aria-expanded')).toBe('false');
+    await store.write({ enabled: false });
+    expect(document.querySelector('.sc-navigation-panel')).toBeNull();
+  });
   it('applies the stored tab name and restores both tab name and favicon on disable', async () => {
     document.head.insertAdjacentHTML('beforeend', '<title>Discord 원래 이름</title><link rel="icon" href="/discord.ico">');
     const store = new MemoryStore({ tabTitle: '주간 보고.xlsx' });
