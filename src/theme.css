@@ -226,8 +226,13 @@ html[data-sc-active][data-sc-show-avatars="true"] #app-mount [data-sc-has-avatar
 .sc-compact-time { display: none; }
 [data-sc-row]:hover .sc-row-number { background: #e3efe7; color: #217346; }
 [data-sc-media="collapsed"], [data-sc-media="hidden"] { display: none !important; }
-[data-sc-media="expanded"] { max-width: min(600px, 100%) !important; max-height: none !important; }
-[data-sc-media="expanded"] img, [data-sc-media="expanded"] video { max-width: 100% !important; height: auto; object-fit: contain; }
+/* Native inline limits keep small previews and their aspect-ratio frames the same size. */
+[data-sc-media="expanded"] { max-width: min(600px, 100%); max-height: none !important; }
+[data-sc-media="expanded"] img, [data-sc-media="expanded"] video { max-width: 100%; height: auto; object-fit: contain; }
+html[data-sc-active] #app-mount [data-sc-row] [data-sc-media-layout]:has(> .sc-media-toggle) {
+  display: flex !important; flex-direction: column !important; align-items: flex-start !important;
+  max-width: min(600px, 100%) !important; min-width: 0 !important;
+}
 .sc-media-toggle { display: block; margin: 6px 0 5px; padding: 5px 10px; border: 1px solid #c9dbcf; background: #f1f7f3; color: #34734a !important; font: 11px/1.4 'Segoe UI', 'Malgun Gothic', sans-serif !important; }
 .sc-media-toggle:hover { background: #e3efe6; }
 [data-sc-emoji-original] { display: none !important; }
@@ -859,7 +864,7 @@ html[data-sc-active] #app-mount [data-sc-messages] > [id^="chat-messages-"]:not(
 html[data-sc-active] #app-mount [data-sc-messages] > [id^="chat-messages-"]:not([data-sc-row]) > h3 { font: 500 13px/20px 'Segoe UI','Malgun Gothic',sans-serif !important; margin: 0 !important; }
 html[data-sc-active] #app-mount [data-sc-messages] > [id^="chat-messages-"]:not([data-sc-row]) > [class*="iconWrapper_"] { display: none !important; }
 html[data-sc-active] #app-mount [data-sc-row] [class*="mosaicItem_"]:has(> .sc-media-toggle) { flex-direction: column !important; align-items: flex-start !important; }
-html[data-sc-active] #app-mount [data-sc-row] [class*="mosaicItem_"] > [data-sc-media] { margin: 0 !important; max-width: 100% !important; }
+html[data-sc-active] #app-mount [data-sc-row] [class*="mosaicItem_"] > [data-sc-media] { margin: 0 !important; max-width: 100%; }
 html[data-sc-active] #app-mount [data-sc-row] [class*="imagePlaceholderHidden_"] { display: none !important; }
 html[data-sc-active] #app-mount [class*="mainCard_"]:has([data-list-item-id^="forum-channel-list-"]) {
   display: grid !important; grid-template-columns: minmax(0,1fr) 100px !important;

@@ -14,7 +14,7 @@ import { addPickerFixture, addReactionPickerFixture, addHeaderPanelFixture, addS
 import { addViewerFixture } from '../tests/viewer-fixture';
 import { addSearchFixture } from '../tests/search-fixture';
 import { addAudioMenuFixture } from '../tests/audio-menu-fixture';
-import { addMediaDisplayFixture, addChromePolishFixture, addConcealRegressionFixture, addStickerInteractionFixture } from '../tests/media-display-fixture';
+import { addMediaDisplayFixture, addChromePolishFixture, addConcealRegressionFixture, addStickerInteractionFixture, addImageSizingFixture } from '../tests/media-display-fixture';
 import { addVirtualChannelFixture } from '../tests/virtual-channel-fixture';
 import { addThreadFixture, addNativeThreadFixture, addBotThreadFixture } from '../tests/thread-fixture';
 
@@ -72,6 +72,7 @@ if (mediaDisplayAudit) addMediaDisplayFixture();
 if (chromePolishAudit) addChromePolishFixture();
 if (concealRegression) addConcealRegressionFixture();
 if (stickerInteraction) addStickerInteractionFixture();
+if (new URLSearchParams(location.search).has('image-sizing')) addImageSizingFixture();
 if (virtualChannels) addVirtualChannelFixture();
 if (threadPreview) addThreadFixture();
 if (nativeThread) addNativeThreadFixture();

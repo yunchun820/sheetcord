@@ -67,3 +67,24 @@ export function addStickerInteractionFixture() {
   }, true);
   return action;
 }
+
+/** Native previews cap both the ratio frame and the artwork with inline dimensions. */
+export function addImageSizingFixture() {
+  addStickerInteractionFixture();
+  const list = document.querySelector('[data-list-id="chat-messages"]')!;
+  const sizes = [[160, 160], [480, 200], [200, 480], [960, 400]];
+  for (const [index, [width, height]] of sizes.entries()) {
+    const id = 90 + index;
+    list.insertAdjacentHTML('beforeend', messageMarkup(id, `${width}×${height}`, ''));
+    const picture = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#b9d4c1"/><text x="8" y="24">${width} × ${height}</text></svg>`);
+    list.querySelector(`#chat-messages-1000-${id} .accessories_fixture`)!.innerHTML = `
+      <div class="inlineMediaEmbed_fixture" style="display:grid"><div class="imageContainer_fixture" style="display:flex">
+        <div class="imageWrapper_fixture" style="position:relative;max-width:${width}px;width:100%;aspect-ratio:${width}/${height}">
+          <a class="originalLink_fixture" href="${picture}" target="_blank" aria-label="원본 보기"></a>
+          <div class="clickableWrapper_fixture" role="button" tabindex="0" aria-label="이미지"><div class="loadingOverlay_fixture" style="aspect-ratio:${width}/${height}">
+            <img alt="크기 점검 ${width}×${height}" src="${picture}" style="max-width:${width}px;max-height:${height}px;width:100%;display:block;aspect-ratio:${width}/${height}">
+          </div></div>
+        </div>
+      </div></div>`;
+  }
+}
