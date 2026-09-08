@@ -21,3 +21,12 @@ export function addMediaDisplayFixture() {
   });
   document.querySelector('#app-mount')!.append(panel);
 }
+
+export function addChromePolishFixture() {
+  addMediaDisplayFixture();
+  const list = document.querySelector('[data-list-id="chat-messages"]')!;
+  list.insertAdjacentHTML('beforeend', messageMarkup(85, '일반 요소 스티커', ''));
+  list.querySelector('#chat-messages-1000-85 .accessories_fixture')!.innerHTML = '<div class="mediaContainer_fixture" style="height:160px"><div class="imageWrapper_fixture"><img src="/stickers/123456789.png" alt="춤추는 고양이, 스티커" width="160" height="160"></div></div>';
+  const panel = document.querySelector('[aria-label="이름 표시 샘플"]')!;
+  panel.insertAdjacentHTML('afterbegin', '<button aria-label="고정된 메시지" style="background:#5865f2;color:#5865f2;border:1px solid #5865f2"><span style="color:#5865f2;background:#5865f2">고정된 메시지</span></button>');
+}

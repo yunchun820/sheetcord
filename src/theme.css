@@ -1522,3 +1522,17 @@ html[data-sc-active] #app-mount [data-sc-picker-label]::after {
 html[data-sc-active] #app-mount [data-sc-picker-label]:is(:hover, :focus-visible) {
   outline: 2px solid #217346 !important; outline-offset: -2px !important;
 }
+
+/* Native pin buttons can carry their own blue inline background and icon fill. */
+html[data-sc-active] #app-mount [data-sc-pinned-control] {
+  background: #f3f6f4 !important; color: #217346 !important; border-color: #bdcbbf !important;
+  --button-filled-brand-background: #217346; --brand-500: #217346; --icon-brand: #217346;
+}
+html[data-sc-active] #app-mount [data-sc-pinned-control] * {
+  color: inherit !important; background-color: transparent !important; background-image: none !important;
+}
+html[data-sc-active] #app-mount [data-sc-pinned-control] :is(svg, path)[fill]:not([fill="none"]) { fill: currentColor !important; }
+html[data-sc-active] #app-mount [data-sc-pinned-control] :is(svg, path)[stroke]:not([stroke="none"]) { stroke: currentColor !important; }
+html[data-sc-active] #app-mount [data-sc-pinned-control]:is(:hover, :focus-visible, [aria-expanded="true"]) {
+  background: #e1eee5 !important; color: #185c37 !important;
+}

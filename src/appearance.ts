@@ -1,6 +1,6 @@
 import { allNative, DomPatches, isOwned, owned } from './dom';
 import emojiRegex from 'emoji-regex';
-import { selectors } from './adapter';
+import { selectors, accessibleLabel } from './adapter';
 
 const mediaControl = (control: HTMLElement) => Boolean(control.closest('[class*="imageWrapper"], [class*="videoWrapper_"], [class*="embedThumbnail_"]') || control.querySelector('[class*="loadingOverlay_"], video, canvas'));
 const formIconControl = '[data-sc-form] [class*="prefixElement_"] [role="button"][class*="iconLayout_"][aria-hidden="false"]';
@@ -9,8 +9,14 @@ const formIconControl = '[data-sc-form] [class*="prefixElement_"] [role="button"
 export class AppearanceController {
   private patches = new DomPatches();
   private labels = new Map<HTMLElement, HTMLElement>();
+  private pinned = new Set<HTMLElement>();
 
   sync(root: HTMLElement) {
+    const pinned = new Set(allNative<HTMLElement>(root, 'button, [role="button"], [role="tab"]')
+      .filter(control => /고정(?:된)?\s*(?:메시지|메세지)|pinned messages|^pins$/i.test(accessibleLabel(control) || control.textContent || '')));
+    for (const old of this.pinned) if (!pinned.has(old)) this.patches.reset(old, 'data-sc-pinned-control');
+    for (const control of pinned) this.patches.set(control, 'data-sc-pinned-control');
+    this.pinned = pinned;
     for (const [control, label] of this.labels) if (!control.isConnected || !root.contains(control) || mediaControl(control) || control.closest(selectors.expressionPicker)) {
       label.remove();
       this.patches.reset(control, 'data-sc-text-control');
@@ -62,6 +68,7 @@ export class AppearanceController {
   clear() {
     for (const label of this.labels.values()) label.remove();
     this.labels.clear();
+    this.pinned.clear();
     this.patches.restore();
   }
 }

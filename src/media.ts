@@ -1,5 +1,5 @@
 import { button, isOwned, DomPatches } from './dom';
-import { selectors, expressionName } from './adapter';
+import { selectors, stickerDetails } from './adapter';
 import { emojiText } from './emoji';
 
 interface MediaEntry { target: HTMLElement; control: HTMLButtonElement; key: string; expanded: boolean }
@@ -80,10 +80,12 @@ export class MediaController {
   private render(entry: MediaEntry) {
     const value = !this.showImages ? 'hidden' : entry.expanded ? 'expanded' : 'collapsed';
     if (entry.target.dataset.scMedia !== value) entry.target.dataset.scMedia = value;
-    const sticker = entry.target.matches('[class*="sticker"]') || entry.target.closest('[class*="sticker"]');
+    const sticker = stickerDetails(entry.target);
     const kind = sticker ? '스티커' : entry.target.matches('video') || entry.target.querySelector('video') ? '영상' : '이미지';
-    const name = sticker && !entry.target.closest('[class*="spoiler"]') ? emojiText(expressionName(entry.target, '스티커')) : '';
-    const label = !this.showImages ? (name && name !== kind ? `[${kind}: ${name}]` : `${kind} 숨김`) : entry.expanded ? `− ${kind} 접기` : `+ ${kind} 펼치기`;
+    const spoiler = entry.target.closest('[class*="spoiler" i]') || entry.target.querySelector('[class*="spoiler" i]');
+    const name = sticker && !spoiler ? emojiText(sticker.name) : '';
+    const caption = name ? `[스티커: ${name}]` : `${kind} 숨김`;
+    const label = !this.showImages ? caption : entry.expanded ? `− ${kind} 접기` : name ? `+ ${caption} 펼치기` : `+ ${kind} 펼치기`;
     if (entry.control.textContent !== label) entry.control.textContent = label;
     entry.control.disabled = !this.showImages;
     entry.control.title = !this.showImages ? '리본의 이미지 표시를 켜면 볼 수 있습니다.' : '';

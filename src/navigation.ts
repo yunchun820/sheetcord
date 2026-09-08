@@ -19,7 +19,7 @@ export class NavigationMenu {
   private cleanup: (() => void) | null = null;
   private signature = '';
 
-  constructor(private label: string, private beforeOpen: () => void) {
+  constructor(private label: string, private beforeOpen: () => void, private anchor?: () => HTMLElement) {
     this.opener = button(label, () => this.panel ? this.close() : this.open(), 'sc-menu-label sc-navigation-toggle');
     this.opener.setAttribute('aria-haspopup', 'dialog');
     this.opener.setAttribute('aria-expanded', 'false');
@@ -34,8 +34,10 @@ export class NavigationMenu {
     if (signature !== this.signature) { this.signature = signature; this.render(); }
   }
 
-  private open() {
+  open() {
+    if (this.panel) return;
     this.beforeOpen();
+    const trigger = this.anchor?.() ?? this.opener;
     const panel = owned('section', 'sc-navigation-panel');
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', this.label);
@@ -55,10 +57,10 @@ export class NavigationMenu {
     panel.append(heading, search, list);
     this.panel = panel; this.search = search; this.list = list;
     document.body.append(panel);
-    this.opener.setAttribute('aria-expanded', 'true');
+    trigger.setAttribute('aria-expanded', 'true');
     this.render();
     const position = () => {
-      const rect = this.opener.getBoundingClientRect();
+      const rect = trigger.getBoundingClientRect();
       const top = Math.max(0, rect.bottom);
       panel.style.top = `${top}px`;
       panel.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - panel.getBoundingClientRect().width - 8))}px`;
@@ -67,7 +69,7 @@ export class NavigationMenu {
     position();
     const outside = (event: Event) => {
       const target = event.target as Node;
-      if (!panel.contains(target) && !this.opener.contains(target)) this.close(false);
+      if (!panel.contains(target) && !trigger.contains(target)) this.close(false);
     };
     panel.addEventListener('keydown', event => {
       if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); this.close(); return; }
@@ -83,7 +85,7 @@ export class NavigationMenu {
     document.addEventListener('pointerdown', outside);
     document.addEventListener('focusin', outside);
     window.addEventListener('resize', position);
-    const menubar = this.opener.parentElement;
+    const menubar = trigger.parentElement;
     menubar?.addEventListener('scroll', position);
     this.cleanup = () => {
       document.removeEventListener('pointerdown', outside);
@@ -136,7 +138,8 @@ export class NavigationMenu {
     if (!this.panel) return;
     this.cleanup?.(); this.cleanup = null;
     this.panel.remove(); this.panel = null; this.list = null; this.search = null;
-    this.opener.setAttribute('aria-expanded', 'false');
-    if (restoreFocus && this.opener.isConnected) this.opener.focus({ preventScroll: true });
+    const trigger = this.anchor?.() ?? this.opener;
+    trigger.setAttribute('aria-expanded', 'false');
+    if (restoreFocus && trigger.isConnected) trigger.focus({ preventScroll: true });
   }
 }

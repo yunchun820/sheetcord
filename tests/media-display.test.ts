@@ -5,6 +5,7 @@ import { MediaController } from '../src/media';
 import { PickerController } from '../src/picker';
 import { AppearanceController } from '../src/appearance';
 import { EmojiController } from '../src/emoji';
+import { stickerDetails } from '../src/adapter';
 
 const media = new MediaController(); const picker = new PickerController(); const appearance = new AppearanceController();
 const root = () => document.querySelector<HTMLElement>('#app-mount')!;
@@ -76,4 +77,35 @@ it('preserves compact media marks in emoji presentation clones', () => {
   const emoji = new EmojiController(); emoji.sync(rows(), false);
   expect(content.nextElementSibling?.querySelector('[data-sc-media-layout="compact"]')).not.toBeNull();
   emoji.clear();
+});
+
+it('identifies stickers inside generic image wrappers and reads parent names without revealing spoilers', () => {
+  const row = rows()[0];
+  row.querySelector('.accessories_fixture')!.innerHTML = '<button aria-label="춤추는 고양이"><div class="imageWrapper_fixture"><img src="https://media.discordapp.net/stickers/123456789.png" alt="Sticker"></div></button>';
+  const target = row.querySelector<HTMLElement>('.imageWrapper_fixture')!;
+  expect(stickerDetails(target)?.name).toBe('춤추는 고양이');
+  media.sync(rows(), 'route', false);
+  expect(target.previousElementSibling?.textContent).toBe('[스티커: 춤추는 고양이]');
+  target.parentElement!.setAttribute('aria-label', '인사하는 고양이');
+  media.sync(rows(), 'route', false);
+  expect(target.previousElementSibling?.textContent).toBe('[스티커: 인사하는 고양이]');
+  target.classList.add('spoilerContent_fixture'); media.sync(rows(), 'route', false);
+  expect(target.previousElementSibling?.textContent).toBe('스티커 숨김');
+  target.querySelector('img')!.setAttribute('src', 'https://cdn.example.com/photo.png');
+  target.querySelector('img')!.setAttribute('alt', '일반 사진');
+  expect(stickerDetails(target)).toBeNull();
+});
+
+it('marks native Korean/English pinned controls and restores their exact DOM', () => {
+  const panel = document.createElement('div');
+  panel.innerHTML = '<button aria-label="고정된 메시지" style="background:#5865f2"><svg fill="#5865f2"></svg></button><button>Pinned Messages</button><button>일반 버튼</button>';
+  root().append(panel);
+  const original = panel.innerHTML;
+  appearance.sync(root());
+  expect(panel.querySelectorAll('[data-sc-pinned-control]')).toHaveLength(2);
+  panel.querySelectorAll('button')[1].textContent = '닫기';
+  appearance.sync(root());
+  expect(panel.querySelectorAll('[data-sc-pinned-control]')).toHaveLength(1);
+  panel.querySelectorAll('button')[1].textContent = 'Pinned Messages';
+  appearance.clear(); expect(panel.innerHTML).toBe(original);
 });

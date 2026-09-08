@@ -74,6 +74,25 @@ export function expressionName(element: Element, fallback: string): string {
   return cleanLabel(nativeText) || fallback;
 }
 
+/** Sticker images may sit inside generic image wrappers, without a sticker class. */
+export function stickerDetails(target: HTMLElement): { name: string } | null {
+  const marker = '[class*="sticker" i], [data-type="sticker"], [data-sticker-id]';
+  const descendants = [target, ...target.querySelectorAll<HTMLElement>('*')];
+  const asset = descendants.find(node => node.matches(marker)
+    || /\/stickers\/\d+(?:[/.?]|$)/i.test(node.getAttribute('src') ?? '')
+    || /(?:스티커|sticker)/i.test(node.getAttribute('alt') ?? ''));
+  const parents: HTMLElement[] = [];
+  for (let node = target.parentElement; node && !node.matches(selectors.row); node = node.parentElement) parents.push(node);
+  const wrapper = parents.find(node => node.matches(marker));
+  if (!asset && !wrapper) return null;
+  const sources = [...new Set([asset, target, wrapper, ...parents.filter(node => node.matches('button, [role="button"]'))].filter((node): node is HTMLElement => Boolean(node)))];
+  for (const source of sources) {
+    const name = expressionName(source, '').replace(/^(?:스티커|sticker)\s*[:：]\s*/i, '').replace(/,\s*(?:스티커|sticker)$/i, '').trim();
+    if (name && !/^(?:이미지|image|스티커|sticker)$/i.test(name)) return { name };
+  }
+  return { name: '' };
+}
+
 function guildLabel(source: HTMLElement): string {
   const semanticText = [...source.querySelectorAll('[class*="hiddenVisually_"]')]
     .map(node => cleanLabel(node.textContent)).filter(label => label && !/^(읽지 않은 메시지|unread messages?|멘션 \d+)$/i.test(label));
