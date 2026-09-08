@@ -2,12 +2,11 @@ export interface Settings {
   enabled: boolean;
   showEmoji: boolean;
   showAvatars: boolean;
-  showImages: boolean;
   sidebarCollapsed: boolean;
   tabTitle: string;
 }
 
-export const defaults: Settings = { enabled: true, showEmoji: false, showAvatars: false, showImages: false, sidebarCollapsed: false, tabTitle: '통합 문서1.xlsx' };
+export const defaults: Settings = { enabled: true, showEmoji: false, showAvatars: false, sidebarCollapsed: false, tabTitle: '통합 문서1.xlsx' };
 export const settingsKey = 'sheetcord.settings';
 
 export function sanitizeSettings(value: unknown): Settings {

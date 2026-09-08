@@ -133,12 +133,12 @@ export class SheetcordController {
       if (!this.shell) this.mount();
       this.tab.start(this.settings.tabTitle);
       this.decorate(surface);
-      this.picker.sync(surface.root, this.settings.showImages, this.settings.showEmoji);
+      this.picker.sync(surface.root, false, this.settings.showEmoji);
       this.appearance.sync(surface.root);
       const rows = this.adapter.rows(surface);
       this.grid.sync(rows, location.pathname, this.settings.showEmoji);
       this.avatars.sync(surface.root, rows);
-      this.media.sync(rows, location.pathname, this.settings.showImages);
+      this.media.sync(rows, location.pathname);
       const emojiSources = this.settings.showEmoji ? []
         : [...this.adapter.emojiLabels(surface), ...this.appearance.emojiSources(surface.root)];
       this.emoji.sync(rows, this.settings.showEmoji, emojiSources);
@@ -169,7 +169,7 @@ export class SheetcordController {
     this.patches.set(document.documentElement, 'data-sc-active');
     this.patches.set(document.documentElement, 'data-sc-sidebar-collapsed', String(this.settings.sidebarCollapsed));
     this.patches.set(document.documentElement, 'data-sc-show-avatars', String(this.settings.showAvatars));
-    this.patches.set(document.documentElement, 'data-sc-show-images', String(this.settings.showImages));
+    this.patches.set(document.documentElement, 'data-sc-show-images', 'false');
     this.patches.set(document.documentElement, 'data-sc-show-emoji', String(this.settings.showEmoji));
     this.patches.set(document.documentElement, 'data-sc-view', /^\/(store|shop|quest-home)/.test(location.pathname) ? 'catalog' : 'conversation');
     this.patches.set(document.documentElement, 'data-sc-has-composer', String(Boolean(surface.form)));

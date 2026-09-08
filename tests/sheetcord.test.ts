@@ -284,31 +284,32 @@ describe('presentation controls preserve native data and actions', () => {
     expect(selected.map(row => (row.lastElementChild as HTMLElement).hidden)).toEqual([false, true, false, false]);
     grid.clear();
   });
-  it('hides all media while off, preserves individual choices and excludes avatars and emoji', () => {
+  it('collapses media by default, preserves individual choices and excludes avatars and emoji', () => {
     const media = new MediaController();
     const target = document.querySelector<HTMLElement>(selectors.attachment)!;
-    media.sync(rows(), location.pathname, false);
-    expect(document.querySelectorAll('[data-sc-media="hidden"]').length).toBe(3);
+    media.sync(rows(), location.pathname);
+    expect(document.querySelectorAll('[data-sc-media="collapsed"]').length).toBe(3);
     expect(document.querySelector('.avatar_fixture')!.hasAttribute('data-sc-media')).toBe(false);
     expect(document.querySelector('img.emoji')!.hasAttribute('data-sc-media')).toBe(false);
     media.toggle(target);
-    expect(target.dataset.scMedia).toBe('hidden');
-    expect((target.previousElementSibling as HTMLButtonElement).disabled).toBe(true);
-    media.sync(rows(), location.pathname, true);
+    expect(target.dataset.scMedia).toBe('expanded');
+    expect((target.previousElementSibling as HTMLButtonElement).disabled).toBe(false);
+    media.sync(rows(), location.pathname);
     expect(target.dataset.scMedia).toBe('expanded');
     media.toggle(target);
-    media.sync(rows(), location.pathname, false);
-    media.sync(rows(), location.pathname, true);
+    media.sync(rows(), location.pathname);
+    media.sync(rows(), location.pathname);
     expect(target.dataset.scMedia).toBe('collapsed');
     media.clear();
   });
-  it('covers GIF, sticker and embed thumbnail leaves added while images are off', () => {
+  it('covers GIF, sticker and embed thumbnail leaves added without expanding them', () => {
     rows()[0].insertAdjacentHTML('beforeend', '<video class="gif_fixture"></video><img class="sticker_fixture" src="data:image/gif;base64,R0lGODlh"><div class="embedThumbnail_fixture"><img src="data:image/gif;base64,R0lGODlh"></div>');
     const media = new MediaController();
-    media.sync(rows(), location.pathname, false);
-    expect(document.querySelectorAll('[data-sc-media="hidden"]').length).toBe(6);
-    media.sync(rows(), location.pathname, true);
-    expect(document.querySelectorAll('[data-sc-media="expanded"]').length).toBe(6);
+    media.sync(rows(), location.pathname);
+    expect(document.querySelectorAll('[data-sc-media="collapsed"]').length).toBe(6);
+    const target = rows()[0].querySelector<HTMLElement>('video')!;
+    media.toggle(target);
+    expect(document.querySelectorAll('[data-sc-media="expanded"]').length).toBe(1);
     media.clear();
   });
   it('collapses images without revealing spoilers and restores the same image nodes', () => {
@@ -317,7 +318,8 @@ describe('presentation controls preserve native data and actions', () => {
     const image = targets[0].querySelector('img');
     const reveal = vi.fn();
     document.querySelector('.spoilerCover_fixture')!.addEventListener('click', reveal);
-    media.sync(rows(), location.pathname, true);
+    media.sync(rows(), location.pathname);
+    targets.forEach(target => media.toggle(target));
     expect(targets.every(target => target.dataset.scMedia === 'expanded')).toBe(true);
     media.toggle(targets[0]);
     expect(targets[0].dataset.scMedia).toBe('collapsed');
@@ -330,19 +332,19 @@ describe('presentation controls preserve native data and actions', () => {
     media.clear();
     expect(document.querySelector('[data-sc-media], .sc-media-toggle')).toBeNull();
   });
-  it('retains collapsed state through virtual-list recycling but resets it on channel change', () => {
+  it('retains expanded state through virtual-list recycling but resets it on channel change', () => {
     const media = new MediaController();
-    media.sync(rows(), location.pathname, true);
+    media.sync(rows(), location.pathname);
     const row = document.getElementById('chat-messages-1000-2')!;
     const target = row.querySelector<HTMLElement>(selectors.attachment)!;
     media.toggle(target);
     row.remove();
-    media.sync(rows(), location.pathname, true);
+    media.sync(rows(), location.pathname);
     document.querySelector('[data-list-id="chat-messages"]')!.append(row);
-    media.sync(rows(), location.pathname, true);
-    expect(target.dataset.scMedia).toBe('collapsed');
-    media.sync(rows(), '/channels/200/2000', true);
+    media.sync(rows(), location.pathname);
     expect(target.dataset.scMedia).toBe('expanded');
+    media.sync(rows(), '/channels/200/2000');
+    expect(target.dataset.scMedia).toBe('collapsed');
     expect(document.querySelectorAll('.sc-media-toggle').length).toBe(3);
     media.clear();
   });
@@ -495,7 +497,7 @@ describe('extension lifecycle', () => {
     (dialog.querySelector('.sc-control-label') as HTMLElement).click();
     expect(click).toHaveBeenCalledTimes(1);
     expect(dialog.querySelector('[contenteditable]')?.textContent).toBe('작성 중 👍');
-    expect(document.documentElement.dataset.scShowImages).toBe('false');
+    expect(document.documentElement.dataset.scShowAvatars).toBe('false');
     expect(document.documentElement.dataset.scShowEmoji).toBe('false');
     await store.write({ enabled: false });
     expect(dialog.innerHTML).toBe(original);
@@ -533,35 +535,35 @@ describe('extension lifecycle', () => {
   });
   it('hides ordinary video attachments, not just GIF videos', () => {
     rows()[0].insertAdjacentHTML('beforeend', '<video controls src="movie.mp4"></video>');
-    const media = new MediaController(); media.sync(rows(), '/channels/100/1000', false);
-    expect(rows()[0].querySelector('video')?.getAttribute('data-sc-media')).toBe('hidden');
+    const media = new MediaController(); media.sync(rows(), '/channels/100/1000');
+    expect(rows()[0].querySelector('video')?.getAttribute('data-sc-media')).toBe('collapsed');
     const video = rows()[0].querySelector('video')!;
     const toggle = video.previousElementSibling as HTMLButtonElement;
-    expect(toggle.textContent).toBe('영상 숨김');
-    media.sync(rows(), '/channels/100/1000', true);
+    expect(toggle.textContent).toBe('+ 영상 펼치기');
+    media.toggle(video);
     expect(toggle.textContent).toBe('− 영상 접기');
     media.toggle(video);
     expect(toggle.textContent).toBe('+ 영상 펼치기');
-    media.sync(rows(), '/channels/100/1000', false);
-    media.sync(rows(), '/channels/100/1000', true);
+    media.sync(rows(), '/channels/100/1000');
+    media.sync(rows(), '/channels/100/1000');
     expect(toggle.textContent).toBe('+ 영상 펼치기');
     media.clear();
     expect(rows()[0].querySelector('video')?.hasAttribute('data-sc-media')).toBe(false);
   });
-  it('keeps inline images governed by the image switch even inside emoji fallback content', async () => {
+  it('expands and collapses inline images through emoji fallback content without an image switch', async () => {
     const source = document.getElementById('message-content-5')!;
     source.insertAdjacentHTML('beforeend', '<img class="inline-picture" src="data:image/gif;base64,R0lGODlh">');
-    const store = new MemoryStore({ showEmoji: false, showImages: true });
+    const store = new MemoryStore({ showEmoji: false });
     controller = new SheetcordController(store);
     await controller.start();
+    await vi.waitFor(() => expect(source.nextElementSibling?.querySelector('.inline-picture')?.getAttribute('data-sc-media')).toBe('collapsed'));
+    source.nextElementSibling!.querySelector<HTMLButtonElement>('.sc-media-toggle')!.click();
     await vi.waitFor(() => expect(source.nextElementSibling?.querySelector('.inline-picture')?.getAttribute('data-sc-media')).toBe('expanded'));
     source.nextElementSibling!.querySelector<HTMLButtonElement>('.sc-media-toggle')!.click();
     await vi.waitFor(() => expect(source.nextElementSibling?.querySelector('.inline-picture')?.getAttribute('data-sc-media')).toBe('collapsed'));
-    await store.write({ showImages: false });
-    await vi.waitFor(() => expect(source.nextElementSibling?.querySelector('.inline-picture')?.getAttribute('data-sc-media')).toBe('hidden'));
-    expect(source.nextElementSibling!.querySelector<HTMLButtonElement>('.sc-media-toggle')!.disabled).toBe(true);
+    expect(source.nextElementSibling!.querySelector<HTMLButtonElement>('.sc-media-toggle')!.disabled).toBe(false);
   });
-  it('switches all three independently, preserves native avatars, and restores settings on remount', async () => {
+  it('switches avatar and emoji preferences independently, preserves native avatars, and restores settings on remount', async () => {
     const native = document.getElementById('app-mount')!;
     const avatar = document.querySelector<HTMLElement>('.avatar_fixture')!;
     const onClick = vi.fn();
@@ -571,11 +573,11 @@ describe('extension lifecycle', () => {
     controller = new SheetcordController(store);
     await controller.start();
     await vi.waitFor(() => expect(avatar.hasAttribute('data-sc-message-avatar')).toBe(true));
-    for (const showAvatars of [true, false]) for (const showEmoji of [false, true]) for (const showImages of [true, false]) {
-      await store.write({ showAvatars, showEmoji, showImages });
+    for (const showAvatars of [true, false]) for (const showEmoji of [false, true]) {
+      await store.write({ showAvatars, showEmoji });
       await vi.waitFor(() => {
         expect(document.documentElement.dataset.scShowAvatars).toBe(String(showAvatars));
-        expect(document.querySelectorAll('[data-sc-media="hidden"]').length).toBe(showImages ? 0 : 3);
+        expect(document.querySelectorAll('[data-sc-media="collapsed"]').length).toBe(3);
         expect(Boolean(document.querySelector('[data-sc-emoji-proxy]'))).toBe(!showEmoji);
         expect([...document.querySelectorAll('.sc-tool')].find(button => button.textContent?.includes('프로필 사진 표시'))?.getAttribute('aria-pressed')).toBe(String(showAvatars));
       });
@@ -584,16 +586,16 @@ describe('extension lifecycle', () => {
     avatar.click();
     expect(onClick).toHaveBeenCalledTimes(1);
     surface().list!.insertAdjacentHTML('beforeend', messageMarkup(99, '새 사진', '새 메시지', { image: true }));
-    await vi.waitFor(() => expect(document.querySelectorAll('[data-sc-media="hidden"]').length).toBe(4));
+    await vi.waitFor(() => expect(document.querySelectorAll('[data-sc-media="collapsed"]').length).toBe(4));
     expect(document.getElementById('chat-messages-1000-99')!.querySelector('[data-sc-message-avatar]')).not.toBeNull();
     document.getElementById('chat-messages-1000-99')!.remove();
-    await store.write({ showAvatars: true, showImages: true, showEmoji: false });
+    await store.write({ showAvatars: true, showEmoji: false });
     controller.destroy();
     expect(native.innerHTML).toBe(snapshot);
     controller = new SheetcordController(store);
     await controller.start();
     await vi.waitFor(() => expect(document.documentElement.dataset.scShowAvatars).toBe('true'));
-    expect(document.querySelectorAll('[data-sc-media="expanded"]').length).toBe(3);
+    expect(document.querySelectorAll('[data-sc-media="collapsed"]').length).toBe(3);
     expect(document.querySelector('[data-sc-emoji-proxy]')).not.toBeNull();
   });
   it('converts sidebar, sheet and author emoji and keeps reply avatars hidden in the emoji presentation', async () => {
@@ -781,6 +783,22 @@ describe('extension lifecycle', () => {
 });
 
 describe('settings privacy and recovery', () => {
+  it('ignores removed image preferences and starts with enabled individual media controls', async () => {
+    const store = new MemoryStore(sanitizeSettings({ ...defaults, showImages: true }));
+    expect(store.settings).not.toHaveProperty('showImages');
+    controller = new SheetcordController(store);
+    await controller.start();
+    await vi.waitFor(() => expect(document.querySelectorAll('[data-sc-media="collapsed"]')).toHaveLength(3));
+    expect([...document.querySelectorAll('.sc-tool')].some(button => button.textContent?.includes('이미지 표시'))).toBe(false);
+    const control = document.querySelector<HTMLButtonElement>('.sc-media-toggle')!;
+    expect(control.disabled).toBe(false);
+    control.click();
+    expect(document.querySelectorAll('[data-sc-media="expanded"]')).toHaveLength(1);
+    const collapse = [...document.querySelectorAll<HTMLButtonElement>('.sc-tool')].find(button => button.textContent?.includes('이미지 모두 접기'))!;
+    collapse.click();
+    expect(document.querySelectorAll('[data-sc-media="expanded"]')).toHaveLength(0);
+    expect(store.writes).toEqual([]);
+  });
   it('applies rapid display toggles before storage settles, without requiring a change event', async () => {
     const store = new MemoryStore();
     const writes: { patch: Partial<Settings>; resolve: () => void }[] = [];
@@ -790,7 +808,6 @@ describe('settings privacy and recovery', () => {
     await vi.waitFor(() => expect(document.querySelector('.sc-header')).not.toBeNull());
     for (const [label, key, attribute] of [
       ['프로필 사진 표시', 'showAvatars', 'data-sc-show-avatars'],
-      ['이미지 표시', 'showImages', 'data-sc-show-images'],
       ['이모지 표시', 'showEmoji', 'data-sc-show-emoji'],
     ] as const) {
       const control = [...document.querySelectorAll<HTMLButtonElement>('.sc-tool')].find(e => e.textContent?.includes(label))!;
@@ -807,7 +824,7 @@ describe('settings privacy and recovery', () => {
     }
     for (const write of writes) { write.resolve(); await Promise.resolve(); }
     await wait();
-    for (const attribute of ['data-sc-show-avatars', 'data-sc-show-images', 'data-sc-show-emoji']) {
+    for (const attribute of ['data-sc-show-avatars', 'data-sc-show-emoji']) {
       expect(document.documentElement.getAttribute(attribute)).toBe('true');
     }
   });
@@ -818,15 +835,15 @@ describe('settings privacy and recovery', () => {
     controller = new SheetcordController(store);
     await controller.start();
     await vi.waitFor(() => expect(document.querySelector('.sc-header')).not.toBeNull());
-    const control = [...document.querySelectorAll<HTMLButtonElement>('.sc-tool')].find(e => e.textContent?.includes('이미지 표시'))!;
+    const control = [...document.querySelectorAll<HTMLButtonElement>('.sc-tool')].find(e => e.textContent?.includes('프로필 사진 표시'))!;
     control.click();
-    await vi.waitFor(() => expect(document.documentElement.dataset.scShowImages).toBe('true'));
+    await vi.waitFor(() => expect(document.documentElement.dataset.scShowAvatars).toBe('true'));
     rejectWrite(new Error('storage unavailable'));
-    await vi.waitFor(() => expect(document.documentElement.dataset.scShowImages).toBe('false'));
+    await vi.waitFor(() => expect(document.documentElement.dataset.scShowAvatars).toBe('false'));
     expect(control.getAttribute('aria-pressed')).toBe('false');
     store.write = async () => {};
     control.click();
-    await vi.waitFor(() => expect(document.documentElement.dataset.scShowImages).toBe('true'));
+    await vi.waitFor(() => expect(document.documentElement.dataset.scShowAvatars).toBe('true'));
   });
   it('does not let a stale startup read overwrite a newer settings notification', async () => {
     const store = new MemoryStore();
@@ -834,10 +851,10 @@ describe('settings privacy and recovery', () => {
     store.read = () => new Promise<Settings>(resolve => { resolveRead = resolve; });
     controller = new SheetcordController(store);
     const started = controller.start();
-    store.listeners.forEach(listener => listener({ ...defaults, showImages: true }));
+    store.listeners.forEach(listener => listener({ ...defaults, showAvatars: true }));
     resolveRead({ ...defaults });
     await started;
-    await vi.waitFor(() => expect(document.documentElement.dataset.scShowImages).toBe('true'));
+    await vi.waitFor(() => expect(document.documentElement.dataset.scShowAvatars).toBe('true'));
   });
   it('migrates old preferences and serializes rapid writes without dropping another switch', async () => {
     let stored = { enabled: true, showEmoji: false, sidebarCollapsed: true } as Settings;
@@ -847,8 +864,8 @@ describe('settings privacy and recovery', () => {
     } } });
     const store = chromeSettings();
     expect(await store.read()).toEqual({ ...defaults, showEmoji: false, sidebarCollapsed: true });
-    await Promise.all([store.write({ showAvatars: true }), store.write({ showImages: true })]);
-    expect(await store.read()).toEqual({ ...defaults, showEmoji: false, sidebarCollapsed: true, showAvatars: true, showImages: true });
+    await Promise.all([store.write({ showAvatars: true }), store.write({ showEmoji: true })]);
+    expect(await store.read()).toEqual({ ...defaults, showEmoji: true, sidebarCollapsed: true, showAvatars: true });
   });
   it('discards unknown fields and invalid values', () => {
     expect(sanitizeSettings({ enabled: false, showEmoji: 'false', sidebarCollapsed: 1, token: 'must-not-persist' }))

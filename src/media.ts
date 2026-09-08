@@ -7,25 +7,18 @@ interface MediaEntry { target: HTMLElement; control: HTMLButtonElement; key: str
 /** Hide only the visual wrapper. Spoiler overlays stay inside it and remain untouched. */
 export class MediaController {
   private entries = new Map<HTMLElement, MediaEntry>();
-  private collapsedKeys = new Set<string>();
+  private expandedKeys = new Set<string>();
   private route = '';
-  private showImages = false;
   private layouts = new Set<HTMLElement>();
   private patches = new DomPatches();
 
   constructor(private onChange: () => void = () => {}) {}
 
-  sync(rows: HTMLElement[], route: string, showImages: boolean) {
-    if (this.showImages !== showImages) this.anchored(() => this.reconcile(rows, route, showImages));
-    else this.reconcile(rows, route, showImages);
-  }
-
-  private reconcile(rows: HTMLElement[], route: string, showImages: boolean) {
+  sync(rows: HTMLElement[], route: string) {
     if (route !== this.route) {
       this.clear();
       this.route = route;
     }
-    this.showImages = showImages;
     for (const [target, entry] of this.entries) {
       if (!target.isConnected || !rows.some(row => row.contains(target))) {
         entry.control.remove();
@@ -53,7 +46,7 @@ export class MediaController {
         }
         if (!entry) {
           const control = button('', () => this.toggle(target), 'sc-media-toggle');
-          entry = { target, control, key, expanded: !this.collapsedKeys.has(key) };
+          entry = { target, control, key, expanded: this.expandedKeys.has(key) };
           this.entries.set(target, entry);
         }
         if (!entry.control.isConnected || entry.control.nextSibling !== target) target.before(entry.control);
@@ -67,7 +60,7 @@ export class MediaController {
     const current = new Map<HTMLElement, boolean>();
     for (const { target, expanded } of this.entries.values()) {
       for (let parent = target.parentElement; parent && !parent.matches(selectors.row); parent = parent.parentElement) {
-        if (parent.matches(selectors.mediaLayout)) current.set(parent, Boolean(current.get(parent) || (this.showImages && expanded)));
+        if (parent.matches(selectors.mediaLayout)) current.set(parent, Boolean(current.get(parent) || expanded));
       }
     }
     for (const old of this.layouts) if (!current.has(old)) this.patches.reset(old, 'data-sc-media-layout');
@@ -78,18 +71,17 @@ export class MediaController {
   }
 
   private render(entry: MediaEntry) {
-    const value = !this.showImages ? 'hidden' : entry.expanded ? 'expanded' : 'collapsed';
+    const value = entry.expanded ? 'expanded' : 'collapsed';
     if (entry.target.dataset.scMedia !== value) entry.target.dataset.scMedia = value;
     const sticker = stickerDetails(entry.target);
     const kind = sticker ? '스티커' : entry.target.matches('video') || entry.target.querySelector('video') ? '영상' : '이미지';
     const spoiler = entry.target.closest('[class*="spoiler" i]') || entry.target.querySelector('[class*="spoiler" i]');
     const name = sticker && !spoiler ? emojiText(sticker.name) : '';
-    const caption = name ? `[스티커: ${name}]` : `${kind} 숨김`;
-    const label = !this.showImages ? caption : entry.expanded ? `− ${kind} 접기` : name ? `+ ${caption} 펼치기` : `+ ${kind} 펼치기`;
+    const caption = name ? `[스티커: ${name}]` : kind;
+    const label = entry.expanded ? `− ${kind} 접기` : `+ ${caption} 펼치기`;
     if (entry.control.textContent !== label) entry.control.textContent = label;
-    entry.control.disabled = !this.showImages;
-    entry.control.title = !this.showImages ? '리본의 이미지 표시를 켜면 볼 수 있습니다.' : '';
-    entry.control.setAttribute('aria-expanded', String(this.showImages && entry.expanded));
+    entry.control.title = label;
+    entry.control.setAttribute('aria-expanded', String(entry.expanded));
   }
 
   private anchored(change: () => void) {
@@ -113,22 +105,21 @@ export class MediaController {
 
   toggle(target: HTMLElement) {
     const entry = this.entries.get(target);
-    if (!entry || !this.showImages) return;
+    if (!entry) return;
     this.anchored(() => {
       entry.expanded = !entry.expanded;
-      if (entry.expanded) this.collapsedKeys.delete(entry.key);
-      else this.collapsedKeys.add(entry.key);
+      if (entry.expanded) this.expandedKeys.add(entry.key);
+      else this.expandedKeys.delete(entry.key);
       this.render(entry);
       this.syncLayouts();
     });
   }
 
   collapseAll() {
-    if (!this.showImages) return;
     this.anchored(() => {
+      this.expandedKeys.clear();
       for (const entry of this.entries.values()) {
         entry.expanded = false;
-        this.collapsedKeys.add(entry.key);
         this.render(entry);
       }
       this.syncLayouts();
@@ -141,7 +132,7 @@ export class MediaController {
       entry.control.remove();
     }
     this.entries.clear();
-    this.collapsedKeys.clear();
+    this.expandedKeys.clear();
     this.patches.restore();
     this.layouts.clear();
   }

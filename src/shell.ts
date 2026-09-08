@@ -24,7 +24,6 @@ export class WorkbookShell {
   private status = text('span', '준비', 'sc-status-message');
   private emojiButton: HTMLButtonElement;
   private avatarButton: HTMLButtonElement;
-  private imageButton: HTMLButtonElement;
   private collapseImagesButton: HTMLButtonElement;
   private sidebarButton: HTMLButtonElement;
   private tabSignature = '';
@@ -79,16 +78,15 @@ export class WorkbookShell {
       return control;
     };
     group('화면', [tool('▦', '원래 화면', () => actions.update({ enabled: false }), true)]);
-    const toggle = (control: HTMLButtonElement, key: 'showEmoji' | 'showAvatars' | 'showImages') => {
+    const toggle = (control: HTMLButtonElement, key: 'showEmoji' | 'showAvatars') => {
       const value = control.getAttribute('aria-pressed') !== 'true';
       control.setAttribute('aria-pressed', String(value));
       actions.update({ [key]: value });
     };
     this.emojiButton = tool('☺', '이모지 표시', () => toggle(this.emojiButton, 'showEmoji'));
     this.avatarButton = tool('♙', '프로필 사진 표시', () => toggle(this.avatarButton, 'showAvatars'));
-    this.imageButton = tool('▧', '이미지 표시', () => toggle(this.imageButton, 'showImages'));
     this.collapseImagesButton = tool('−', '이미지 모두 접기', () => actions.collapseImages());
-    group('콘텐츠 표시', [this.avatarButton, this.imageButton, this.emojiButton, this.collapseImagesButton]).classList.add('sc-display-controls');
+    group('콘텐츠 표시', [this.avatarButton, this.emojiButton, this.collapseImagesButton]).classList.add('sc-display-controls');
     this.sidebarButton = tool('◧', '채널 창', () => {
       const visible = this.sidebarButton.getAttribute('aria-pressed') !== 'true';
       this.sidebarButton.setAttribute('aria-pressed', String(visible));
@@ -172,8 +170,6 @@ export class WorkbookShell {
     }
     this.emojiButton.setAttribute('aria-pressed', String(settings.showEmoji));
     this.avatarButton.setAttribute('aria-pressed', String(settings.showAvatars));
-    this.imageButton.setAttribute('aria-pressed', String(settings.showImages));
-    this.collapseImagesButton.disabled = !settings.showImages;
     this.sidebarButton.setAttribute('aria-pressed', String(!settings.sidebarCollapsed));
     this.title.textContent = `${settings.showEmoji ? channel : emojiText(channel)} — 커뮤니케이션.xlsx`;
     this.columnCorner.textContent = location.pathname.startsWith('/channels/@me') ? '개인 메시지' : '채널';
@@ -246,8 +242,8 @@ export class WorkbookShell {
       '삽입 → 서버 목록·채널 목록: 검색해서 대화로 이동',
       '왼쪽 목록: 채널 선택 · 상단 입력줄: 메시지 작성',
       'Enter로 전송, Shift+Enter로 줄바꿈합니다.',
-      '프로필 사진·이모지·이미지는 각각 켜거나 끌 수 있으며 설정이 저장됩니다.',
-      '이미지 표시를 켜면 개별 접기·펼치기를 쓸 수 있습니다. 스포일러 공개는 별도입니다.',
+      '프로필 사진·이모지 표시 설정은 저장됩니다.',
+      '이미지·스티커는 기본으로 접혀 있으며 메시지에서 개별로 펼칩니다. 스포일러 공개는 별도입니다.',
       '이모지를 끄면 이름이나 문자 코드로 표시합니다.',
       '행 번호는 현재 세션의 표시 번호입니다. 서버의 메시지 번호가 아닙니다.',
       '원래 화면으로 돌아간 뒤에는 확장 아이콘에서 다시 켤 수 있습니다.',

@@ -10,6 +10,7 @@ afterEach(() => {
 
 it('saves custom and empty tab names through the popup while retaining checkbox preferences', async () => {
   document.body.innerHTML = readFileSync('public/popup.html', 'utf8').split('<body>')[1].split('</body>')[0].replace('<script src="popup.js"></script>', '');
+  expect(document.getElementById('showImages')).toBeNull();
   let stored = { ...defaults };
   const listeners = new Set<(changes: Record<string, { newValue: Settings }>, area: string) => void>();
   vi.stubGlobal('chrome', { storage: {

@@ -15,12 +15,12 @@ afterEach(() => { media.clear(); picker.clear(); appearance.clear(); document.bo
 
 it('collapses mosaic/sticker spacers, labels canvas stickers once and restores original dimensions', () => {
   const before = rows().map(row => row.innerHTML);
-  media.sync(rows(), '/channels/100/1000', false);
+  media.sync(rows(), '/channels/100/1000');
   expect(document.querySelectorAll('.sc-media-toggle')).toHaveLength(2);
   expect(document.querySelector('.stickerContainer_fixture')?.getAttribute('data-sc-media-layout')).toBe('compact');
   expect(document.querySelector('.mosaicContainer_fixture')?.getAttribute('data-sc-media-layout')).toBe('compact');
   expect(document.querySelector('.stickerContainer_fixture')?.textContent).toContain('[스티커: 인사하는 고양이]');
-  media.sync(rows(), '/channels/100/1000', true);
+  media.toggle(document.querySelector<HTMLElement>('.stickerAsset_fixture')!);
   expect(document.querySelector('.stickerContainer_fixture')?.getAttribute('data-sc-media-layout')).toBe('expanded');
   media.collapseAll();
   expect(document.querySelector('.mosaicContainer_fixture')?.getAttribute('data-sc-media-layout')).toBe('compact');
@@ -31,10 +31,21 @@ it('collapses mosaic/sticker spacers, labels canvas stickers once and restores o
 it('keeps shared mosaic dimensions while any image remains expanded', () => {
   const mosaic = document.querySelector('.mosaicContainer_fixture')!;
   mosaic.append(mosaic.firstElementChild!.cloneNode(true));
-  media.sync(rows(), 'route', true);
+  media.sync(rows(), 'route');
   const targets = mosaic.querySelectorAll<HTMLElement>('[data-sc-media]');
+  targets.forEach(target => media.toggle(target));
   media.toggle(targets[0]); expect(mosaic.getAttribute('data-sc-media-layout')).toBe('expanded');
   media.toggle(targets[1]); expect(mosaic.getAttribute('data-sc-media-layout')).toBe('compact');
+});
+
+it('collapses offscreen expanded media too when all images are collapsed', () => {
+  media.sync(rows(), 'route');
+  const row = rows()[0]; const target = row.querySelector<HTMLElement>('[data-sc-media]')!;
+  media.toggle(target); row.remove(); media.sync(rows(), 'route');
+  media.collapseAll();
+  document.querySelector('[data-list-id="chat-messages"]')!.append(row);
+  media.sync(rows(), 'route');
+  expect(target.dataset.scMedia).toBe('collapsed');
 });
 
 it('relabels recycled choices, preserves native click/disabled behavior and restores independently', () => {
@@ -73,7 +84,7 @@ it('reads referenced names and late alt-only choices without exposing media URLs
 it('preserves compact media marks in emoji presentation clones', () => {
   const content = document.querySelector('#message-content-83')!;
   content.insertAdjacentHTML('beforeend', '<div class="stickerContainer_fixture" style="height:160px"><canvas aria-label="하트 스티커"></canvas></div>');
-  media.sync(rows(), 'route', false);
+  media.sync(rows(), 'route');
   const emoji = new EmojiController(); emoji.sync(rows(), false);
   expect(content.nextElementSibling?.querySelector('[data-sc-media-layout="compact"]')).not.toBeNull();
   emoji.clear();
@@ -84,13 +95,13 @@ it('identifies stickers inside generic image wrappers and reads parent names wit
   row.querySelector('.accessories_fixture')!.innerHTML = '<button aria-label="춤추는 고양이"><div class="imageWrapper_fixture"><img src="https://media.discordapp.net/stickers/123456789.png" alt="Sticker"></div></button>';
   const target = row.querySelector<HTMLElement>('.imageWrapper_fixture')!;
   expect(stickerDetails(target)?.name).toBe('춤추는 고양이');
-  media.sync(rows(), 'route', false);
-  expect(target.previousElementSibling?.textContent).toBe('[스티커: 춤추는 고양이]');
+  media.sync(rows(), 'route');
+  expect(target.previousElementSibling?.textContent).toBe('+ [스티커: 춤추는 고양이] 펼치기');
   target.parentElement!.setAttribute('aria-label', '인사하는 고양이');
-  media.sync(rows(), 'route', false);
-  expect(target.previousElementSibling?.textContent).toBe('[스티커: 인사하는 고양이]');
-  target.classList.add('spoilerContent_fixture'); media.sync(rows(), 'route', false);
-  expect(target.previousElementSibling?.textContent).toBe('스티커 숨김');
+  media.sync(rows(), 'route');
+  expect(target.previousElementSibling?.textContent).toBe('+ [스티커: 인사하는 고양이] 펼치기');
+  target.classList.add('spoilerContent_fixture'); media.sync(rows(), 'route');
+  expect(target.previousElementSibling?.textContent).toBe('+ 스티커 펼치기');
   target.querySelector('img')!.setAttribute('src', 'https://cdn.example.com/photo.png');
   target.querySelector('img')!.setAttribute('alt', '일반 사진');
   expect(stickerDetails(target)).toBeNull();
