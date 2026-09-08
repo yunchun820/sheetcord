@@ -19,7 +19,7 @@ export class AvatarController {
     const primary: HTMLElement[] = [];
     const withAvatar: HTMLElement[] = [];
     for (const row of rows) {
-      const avatar = avatars.find(node => row.contains(node) && !node.closest('[class*="repliedMessage_"], [class*="avatarDecoration_"], [class*="embed_"]'));
+      const avatar = avatars.find(node => row.contains(node) && !node.closest(`${selectors.visuallyHidden}, [data-sc-thread-card], [class*="repliedMessage_"], [class*="avatarDecoration_"], [class*="embed_"]`));
       if (avatar) { primary.push(avatar); withAvatar.push(row); }
     }
     this.mark('data-sc-avatar', avatars);

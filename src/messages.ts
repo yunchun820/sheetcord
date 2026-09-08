@@ -1,10 +1,11 @@
 import { selectors } from './adapter';
-import { DomPatches, owned, queryNative } from './dom';
+import { allNative, DomPatches, owned } from './dom';
 import { emojiText } from './emoji';
 
 export class MessageGrid {
   private authorPatches = new DomPatches();
   private authorControls = new Set<HTMLElement>();
+  private threadCards = new Set<HTMLElement>();
   private gutters = new Map<HTMLElement, HTMLElement>();
   private compactTimes = new Map<HTMLElement, HTMLElement>();
   private emptyCells = new Map<HTMLElement, HTMLElement[]>();
@@ -14,6 +15,16 @@ export class MessageGrid {
   sync(rows: HTMLElement[], route: string, showEmoji = true) {
     if (this.route !== route) { this.clear(); this.route = route; }
     const currentAuthors = new Set<HTMLElement>();
+    const currentThreads = new Set<HTMLElement>();
+    for (const row of rows) for (const name of allNative<HTMLElement>(row, selectors.threadName)) {
+      const card = name.closest<HTMLElement>('[class*="threadMessageAccessory_"], [class*="container_"]');
+      if (card && card !== row && row.contains(card) && !card.querySelector(selectors.row)) {
+        currentThreads.add(card);
+        this.authorPatches.set(card, 'data-sc-thread-card');
+      }
+    }
+    for (const old of this.threadCards) if (!currentThreads.has(old)) this.authorPatches.reset(old, 'data-sc-thread-card');
+    this.threadCards = currentThreads;
     for (const [row, gutter] of this.gutters) if (!row.isConnected || !rows.includes(row)) {
       gutter.remove();
       this.compactTimes.get(row)?.remove();
@@ -37,9 +48,11 @@ export class MessageGrid {
         gutter.setAttribute('aria-hidden', 'true');
         this.gutters.set(row, gutter);
       }
-      const authorNode = [...row.querySelectorAll<HTMLElement>(selectors.author)]
-        .find(node => !node.closest('[data-sc-owned], [class*="repliedMessage_"]'));
-      const timeNode = queryNative<HTMLTimeElement>(row, 'time');
+      const metadata = <T extends HTMLElement>(selector: string) => allNative<T>(row, selector).find(node =>
+        !node.closest(`${selectors.visuallyHidden}, [data-sc-thread-card], [class*="repliedMessage_"], [class*="messageSnapshot_"]`)
+        && node.closest(selectors.row) === row);
+      const authorNode = metadata<HTMLElement>(selectors.author);
+      const timeNode = metadata<HTMLTimeElement>('time');
       const authorName = authorNode?.querySelector<HTMLElement>('[class*="username_"]') ?? authorNode;
       if (authorName?.matches('[role="button"]') && authorName.closest('[class*="header_"]')) {
         currentAuthors.add(authorName);
@@ -102,6 +115,7 @@ export class MessageGrid {
   clear() {
     this.authorPatches.restore();
     this.authorControls.clear();
+    this.threadCards.clear();
     for (const [row, gutter] of this.gutters) { row.removeAttribute('data-sc-row'); gutter.remove(); }
     this.gutters.clear();
     for (const footer of this.compactTimes.values()) footer.remove();

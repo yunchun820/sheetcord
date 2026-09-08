@@ -26,7 +26,7 @@ export class EmojiController {
   sync(rows: HTMLElement[], showEmoji: boolean, additionalSources: HTMLElement[] = []) {
     if (showEmoji) { this.clear(); return; }
     const candidates = [...rows.flatMap(row => [...row.querySelectorAll<HTMLElement>(`${selectors.content}, ${selectors.reaction}, [class*="repliedMessage_"]`)]), ...additionalSources]
-      .filter(element => !isOwned(element) && !element.closest('[contenteditable="true"], [data-sc-picker-label]') && !element.querySelector('[contenteditable="true"]'));
+      .filter(element => !isOwned(element) && !element.closest(`[contenteditable="true"], [data-sc-picker-label], ${selectors.visuallyHidden}`) && !element.querySelector('[contenteditable="true"]'));
     const sources = [...new Set(candidates.filter(element => !candidates.some(other => other !== element && other.contains(element))))];
     const active = new Set(sources);
     for (const [source, entry] of this.entries) {
@@ -56,7 +56,7 @@ export class EmojiController {
         }
         const output = node.cloneNode(false) as Element;
         for (const attribute of [...output.attributes]) {
-          if (attribute.name === 'id' || (attribute.name.startsWith('data-sc-') && !['data-sc-media', 'data-sc-media-layout', 'data-sc-sticker', 'data-sc-avatar'].includes(attribute.name)) || attribute.name === 'contenteditable'
+          if (attribute.name === 'id' || (attribute.name.startsWith('data-sc-') && !['data-sc-media', 'data-sc-media-layout', 'data-sc-sticker', 'data-sc-avatar', 'data-sc-thread-card'].includes(attribute.name)) || attribute.name === 'contenteditable'
             || attribute.name.startsWith('on') || attribute.name === 'data-list-item-id') output.removeAttribute(attribute.name);
         }
         mapping.set(output, node);

@@ -1598,3 +1598,45 @@ html[data-sc-active] #app-mount [data-sc-row] [data-sc-sticker][data-sc-media="e
 }
 /* Conceal scan motion while preserving the native virtual list's measurable viewport. */
 html[data-sc-active] #app-mount [data-sc-channel-scanning] { opacity: 0 !important; }
+
+/* Accessibility transcripts must stay clipped, including inside presentation clones. */
+html[data-sc-active] #app-mount :is([class*="hiddenVisually_"], [class*="visuallyHidden_"]) {
+  position: absolute !important; display: block !important; width: 1px !important;
+  height: 1px !important; min-width: 0 !important; min-height: 0 !important; max-height: 1px !important;
+  padding: 0 !important; margin: -1px !important; border: 0 !important;
+  overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; clip-path: inset(50%) !important;
+  white-space: nowrap !important; pointer-events: none !important;
+}
+/* Thread references are two compact worksheet lines, within the message cell. */
+html[data-sc-active] #app-mount [data-sc-row] [data-sc-thread-card] {
+  position: relative !important; inset: auto !important; transform: none !important;
+  display: flex !important; flex-direction: column !important; gap: 3px !important;
+  box-sizing: border-box !important; width: 100% !important; min-width: 0 !important; max-width: 100% !important;
+  height: auto !important; min-height: 0 !important; max-height: none !important;
+  padding: 6px 8px !important; margin: 6px 0 0 !important;
+  border: 1px solid var(--sc-cell-border) !important; border-radius: 0 !important;
+  background: #fff !important; box-shadow: none !important;
+  font: 12px/20px 'Segoe UI','Malgun Gothic',sans-serif !important;
+}
+html[data-sc-active] #app-mount [data-sc-thread-card] :is([class*="spine_"], [class*="threadSpine_"], [class*="icon_"]) { display: none !important; }
+html[data-sc-active] #app-mount [data-sc-thread-card]::before,
+html[data-sc-active] #app-mount [data-sc-thread-card]::after { display: none !important; }
+html[data-sc-active] #app-mount [data-sc-thread-card] :is([class*="topLine_"], [class*="bottomLine_"]) {
+  position: static !important; display: flex !important; align-items: baseline !important; gap: 6px !important;
+  width: 100% !important; min-width: 0 !important; height: 20px !important;
+  padding: 0 !important; margin: 0 !important; overflow: hidden !important;
+}
+html[data-sc-active] #app-mount [data-sc-thread-card] :is([class*="threadName_"], [class*="threadMessagePreview_"], [class*="messageContent_"], [class*="username_"], [data-sc-emoji-proxy]) {
+  min-width: 0 !important; max-width: 100% !important; overflow: hidden !important;
+  white-space: nowrap !important; text-overflow: ellipsis !important;
+  font: 12px/20px 'Segoe UI','Malgun Gothic',sans-serif !important;
+}
+html[data-sc-active] #app-mount [data-sc-thread-card] :is([class*="threadName_"], [class*="threadMessagePreview_"]) { flex: 1 1 0% !important; }
+html[data-sc-active] #app-mount [data-sc-thread-card] [class*="threadName_"] { color: #217346 !important; font-weight: 600 !important; }
+html[data-sc-active] #app-mount [data-sc-thread-card] :is([class*="cta_"], [class*="messageCount_"]) { flex: 0 0 auto !important; white-space: nowrap !important; font: 11px/20px 'Segoe UI','Malgun Gothic',sans-serif !important; color: #617568 !important; }
+html[data-sc-active] #app-mount [data-sc-thread-card] [class*="username_"] { flex: 0 1 auto !important; max-width: 35% !important; }
+html[data-sc-active] #app-mount [data-sc-thread-card] .sc-media-toggle { display: inline-block !important; flex: 0 0 auto; max-width: 100%; margin: 0 !important; padding: 0 !important; }
+html[data-sc-active][data-sc-show-avatars="false"] #app-mount [data-sc-thread-card] [data-sc-avatar] { display: none !important; }
+html[data-sc-active][data-sc-show-avatars="true"] #app-mount [data-sc-thread-card] [data-sc-avatar] { position: static !important; width: 16px !important; height: 16px !important; flex: 0 0 16px !important; margin: 0 !important; }
+html[data-sc-active] #app-mount [data-sc-thread-card]:hover { background: #f3f7f4 !important; }
+html[data-sc-active] #app-mount [data-sc-thread-card]:focus-visible { outline: 2px solid #217346 !important; outline-offset: -2px; }

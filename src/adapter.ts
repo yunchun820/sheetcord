@@ -11,6 +11,8 @@ export const selectors = {
   list: '[data-list-id="chat-messages"]',
   row: 'li[id^="chat-messages-"], [data-list-item-id^="chat-messages___"]',
   content: '[id^="message-content-"]',
+  visuallyHidden: '[class*="hiddenVisually_"], [class*="visuallyHidden_"]',
+  threadName: '[class*="threadName_"]',
   author: '[id^="message-username-"], [class*="username_"]',
   avatar: '[class*="avatar_"], [class*="avatarWrapper_"], [class*="avatarContainer_"], [class*="replyAvatar_"], [class*="embedAuthorIcon_"], [class*="embedFooterIcon_"], img[src*="/avatars/"], img[src*="/embed/avatars/"]',
   editor: '[role="textbox"][contenteditable="true"][data-slate-editor="true"], [role="textbox"][contenteditable="true"]',
