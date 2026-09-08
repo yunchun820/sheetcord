@@ -4,7 +4,10 @@ html[data-sc-active] {
   --sc-border: #d7ddd8;
   --sc-ink: #243329;
   --sc-sidebar: 204px;
-  --sc-ribbon-height: 148px;
+  --sc-titlebar-height: 36px;
+  --sc-menubar-height: 30px;
+  --sc-ribbon-body-height: 90px;
+  --sc-ribbon-height: calc(var(--sc-titlebar-height) + var(--sc-menubar-height) + var(--sc-ribbon-body-height));
   --sc-form-height: 42px;
   --sc-top: calc(var(--sc-ribbon-height) + var(--sc-form-height) + 28px);
   --sc-bottom: 58px;
@@ -37,15 +40,15 @@ html[data-sc-sidebar-collapsed="true"] { --sc-sidebar: 0px; }
 .sc-menu-label.is-active { color: #217346; border-bottom: 2px solid #217346; font-weight: 600; }
 .sc-help-link { margin-left: auto; border: 0; background: transparent; font-size: 11px !important; padding: 0 12px; color: #65736a !important; }
 .sc-help-link:hover { background: #e8efe9; }
-.sc-ribbon { height: 82px; display: flex; align-items: stretch; gap: 0; padding: 6px 12px 3px; border-bottom: 1px solid #cbd3cc; background: #f8f9f8; overflow-x: auto; }
-.sc-ribbon-group { display: flex; flex-direction: column; padding: 0 14px; border-right: 1px solid #d9dfda; }
+.sc-ribbon { height: var(--sc-ribbon-body-height); display: flex; align-items: stretch; gap: 0; padding: 6px 12px 3px; border-bottom: 1px solid #cbd3cc; background: #f8f9f8; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.sc-ribbon-group { display: flex; flex: 0 0 auto; flex-direction: column; padding: 0 14px; border-right: 1px solid #d9dfda; }
 .sc-ribbon-group:first-child { padding-left: 0; }
 .sc-ribbon-items { display: flex; align-items: center; gap: 5px; flex: 1; }
 .sc-display-controls { display: grid; grid-template-columns: repeat(2, max-content); gap: 2px 5px; }
 .sc-display-controls .sc-tool { min-height: 26px; padding-block: 0; }
 .sc-tool:disabled, .sc-media-toggle:disabled { opacity: .55; cursor: default; }
 .sc-group-label { text-align: center; color: #78827b; font-size: 10px; line-height: 17px; }
-.sc-tool { display: flex; align-items: center; gap: 7px; padding: 8px 10px; min-height: 34px; white-space: nowrap; background: transparent; border: 1px solid transparent; }
+.sc-tool { display: flex; flex-shrink: 0; align-items: center; gap: 7px; padding: 8px 10px; min-height: 34px; white-space: nowrap; background: transparent; border: 1px solid transparent; }
 .sc-tool:hover { border-color: #b9cfc0; background: #eaf1ec; }
 .sc-tool[aria-pressed="true"] { background: #e4eee7; border-color: #c0d5c6; color: #185c37; }
 .sc-tool-icon { font-family: 'Segoe UI Symbol', sans-serif; font-size: 23px; line-height: 23px; color: #317a4c; }
@@ -246,8 +249,6 @@ html[data-sc-active][data-sc-show-avatars="true"] #app-mount [data-sc-has-avatar
   html[data-sc-sidebar-collapsed="true"] { --sc-sidebar: 0px; }
   .sc-menu-label:nth-child(n+5) { display: none; }
   .sc-connected, .sc-sheet-brand { display: none; }
-  .sc-tool { padding-inline: 5px; font-size: 11px !important; }
-  .sc-tool-icon { font-size: 19px; }
   .sc-row-gutter { grid-template-columns: 38px 64px 120px; }
   .sc-column-time { width: 64px; }
   .sc-column-author { width: 120px; }
@@ -416,16 +417,14 @@ html[data-sc-view="catalog"] #app-mount [data-sc-chat] :is([class*="sectionsCont
   gap: 0 !important; padding-block: 8px !important;
 }
 @media (max-width: 600px) {
-  html[data-sc-active] { --sc-ribbon-height: 104px; --sc-top: calc(104px + var(--sc-form-height) + 28px); --sc-bottom: 58px; --sc-gutter: 150px; --sc-author-width: 74px; }
+  html[data-sc-active] { --sc-titlebar-height: 28px; --sc-menubar-height: 24px; --sc-top: calc(var(--sc-ribbon-height) + var(--sc-form-height) + 28px); --sc-bottom: 58px; --sc-gutter: 150px; --sc-author-width: 74px; }
   html[data-sc-active][data-sc-has-composer="false"] { --sc-bottom: 58px; }
   .sc-header, .sc-bottom { display: block !important; }
   .sc-titlebar { height: 28px; padding-inline: 8px; }
   .sc-menubar { height: 24px; }
   .sc-menu-label { padding: 3px 8px; }
-  .sc-ribbon { height: 52px; padding: 2px 4px; }
+  .sc-ribbon { padding-inline: 4px; }
   .sc-group-label, .sc-brand, .sc-title-separator { display: none; }
-  .sc-tool-large .sc-tool-icon { font-size: 18px; line-height: 20px; }
-  .sc-display-controls .sc-tool { min-height: 22px; }
   .sc-formula { padding-inline: 4px; }
   .sc-name-box { width: 50px; }
   .sc-fx { width: 28px; }
@@ -439,7 +438,7 @@ html[data-sc-view="catalog"] #app-mount [data-sc-chat] :is([class*="sectionsCont
   .sc-row-gutter span { padding-inline: 3px; font-size: 10px; }
   .sc-compact-time:not([hidden]) { display: none; }
   [data-sc-row] > [class*="message_"] { padding: 6px 8px !important; }
-  [data-sc-form] { top: 108px !important; bottom: auto !important; left: 82px !important; right: 4px !important; }
+  [data-sc-form] { top: calc(var(--sc-ribbon-height) + 4px) !important; bottom: auto !important; left: 82px !important; right: 4px !important; }
   [data-sc-form] [class*="autocomplete_"] { top: 100% !important; bottom: auto !important; }
   html[data-sc-active] #app-mount [data-sc-form] [class*="buttons_"] { display: none !important; }
 }
@@ -602,12 +601,9 @@ html[data-sc-active] #app-mount [data-sc-text-control] :is([class*="buttonWrappe
 html[data-sc-active] #app-mount [data-sc-form] [class*="placeholder_"] { min-height: 32px !important; }
 html[data-sc-active] #app-mount [data-sc-row] [class*="repliedMessage_"]::before { display: none !important; }
 .sc-media-toggle { white-space: nowrap; min-width: max-content; }
-html[data-sc-active] #app-mount [class*="trailing_"]:has([aria-label="받은 편지함"]) {
-  position: fixed !important; top: 86px !important; right: 280px !important; height: 28px !important; z-index: 110;
-  display: flex !important; align-items: center !important; gap: 6px !important;
-}
-@media(max-width: 1000px) {
-  html[data-sc-active] #app-mount [class*="trailing_"]:has([aria-label="받은 편지함"]) { top: 37px !important; right: 100px !important; }
+/* Hide Discord's global inbox/help controls without covering the workbook ribbon. */
+html[data-sc-active] #app-mount [class*="trailing_"] :is([aria-label="받은 편지함"], [aria-label="Inbox"], [aria-label="도움말"], [aria-label="Help"]) {
+  display: none !important;
 }
 
 /* Message parity: use the sample cell metrics across native wrapper variations. */
@@ -1459,14 +1455,13 @@ html[data-sc-active][data-sc-show-avatars="false"] #app-mount .user-profile-moda
 }
 
 /* Channel shortcuts remain available independently of the sidebar toggle. */
-.sc-channel-group { flex: 1 1 auto; min-width: 220px; max-width: 420px; }
-.sc-channel-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; width: 100%; height: 52px; overflow: auto; border: 1px solid #bcc8bf; background: white; }
-.sc-channel-cell { min-width: 0; min-height: 25px; padding: 4px 7px; border: 0; border-right: 1px solid #d5ddd7; border-bottom: 1px solid #d5ddd7; border-radius: 0; background: white; color: #334b3b; font: 11px/16px Arial, sans-serif; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+.sc-channel-group { flex: 0 0 auto; min-width: 0; max-width: none; }
+.sc-channel-list { display: grid; grid-template-rows: repeat(2, 26px); grid-auto-flow: column; grid-auto-columns: 160px; align-content: start; width: max-content; height: 54px; overflow: visible; border: 1px solid #bcc8bf; background: white; }
+.sc-channel-cell { min-width: 0; min-height: 25px; padding: 4px 7px; border: 0; border-right: 1px solid #d5ddd7; border-bottom: 1px solid #d5ddd7; border-radius: 0; background: white; color: #334b3b; font: 11px/16px Arial, sans-serif; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
 .sc-channel-cell:hover { background: #edf3ef; }
 .sc-channel-cell[aria-current="page"] { background: #e1eee5; color: #185c37; box-shadow: inset 3px 0 #217346; font-weight: 600; }
 .sc-channel-cell:focus-visible { outline: 2px solid #217346; outline-offset: -2px; }
 .sc-channel-empty { padding: 5px; font-size: 11px; }
-@media (max-width: 600px) { .sc-channel-list { height: 30px; } }
 /* Keep native channel actions clear of the expanded ribbon content. */
 html[data-sc-active] #app-mount [data-sc-native-header] [class*="toolbar_"]:has(> [role="button"]) {
   top: auto !important; left: auto !important; right: 12px !important; bottom: 64px !important; max-width: calc(100vw - 24px) !important;

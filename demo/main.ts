@@ -1,6 +1,7 @@
 import './native.css';
 import { SheetcordController } from '../src/controller';
 import { defaults, sanitizeSettings, type Settings, type SettingsStore } from '../src/settings';
+import { addTopbarFixture } from '../tests/topbar-fixture';
 import { fixtureMarkup, messageMarkup } from '../tests/fixture';
 import { addDarkSidebarFixture } from '../tests/sidebar-fixture';
 import { addAppearanceFixture } from '../tests/appearance-fixture';
@@ -158,6 +159,10 @@ const demo = document.createElement('details');
 demo.className = 'demo-tools';
 demo.innerHTML = '<summary>샘플 도구</summary><p>샘플 데이터 · 실제 디스코드 연결 없음</p><button data-demo="reset">엑셀 화면 켜기</button><button data-demo="receive">새 메시지 수신</button><button data-demo="older">과거 메시지 로딩</button><button data-demo="long-tabs">서버 탭 15개 추가</button><button data-demo="tab-labels">탭 이름 누락·긴 이름 재현</button><button data-demo="break">화면 구조 변경 재현</button><button data-demo="repair">구조 복구 및 재시도</button>';
 document.body.append(demo);
+const topbarDemo = document.createElement('button');
+topbarDemo.textContent = '상단 받은 편지함·도움말 재현';
+topbarDemo.addEventListener('click', () => addTopbarFixture());
+demo.append(topbarDemo);
 const demoTabForm = document.createElement('form');
 demoTabForm.innerHTML = '<label for="demo-tab-title">탭 이름 샘플</label><input id="demo-tab-title" type="text" maxlength="80"><button type="submit">탭 이름 적용</button>';
 const demoTabTitle = demoTabForm.querySelector<HTMLInputElement>('input')!;
