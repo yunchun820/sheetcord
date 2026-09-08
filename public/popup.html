@@ -2,13 +2,18 @@
 <html lang="ko">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sheetcord 설정</title><link rel="stylesheet" href="popup.css"></head>
 <body>
-  <header><span class="logo">S</span><div><h1>Sheetcord</h1><p>대화가 놓이는 새로운 셀.</p></div><span class="version">0.1.4</span></header>
+  <header><span class="logo">S</span><div><h1>Sheetcord</h1><p>대화가 놓이는 새로운 셀.</p></div><span class="version">0.2.52</span></header>
   <main>
     <label class="setting primary"><span><strong>엑셀 화면</strong><small>디스코드 웹에 적용</small></span><input id="enabled" type="checkbox" role="switch"></label>
     <label class="setting"><span><strong>이모지 표시</strong><small>끄면 이름 또는 문자 코드로 표시</small></span><input id="showEmoji" type="checkbox" role="switch"></label>
     <label class="setting"><span><strong>프로필 사진 표시</strong><small>메시지·왼쪽 목록의 프로필 사진</small></span><input id="showAvatars" type="checkbox" role="switch"></label>
     <label class="setting"><span><strong>이미지 표시</strong><small>사진·GIF·스티커 표시, 스포일러는 별도 공개</small></span><input id="showImages" type="checkbox" role="switch"></label>
     <label class="setting"><span><strong>채널 목록 접기</strong><small>메시지 공간 넓히기</small></span><input id="sidebarCollapsed" type="checkbox" role="switch"></label>
+    <form id="tab-settings">
+      <label for="tabTitle">브라우저 탭 이름</label>
+      <p id="tab-title-help">아이콘은 자동으로 숨깁니다. 이름을 비우면 원래 탭 제목을 사용합니다.</p>
+      <div class="tab-title-row"><input id="tabTitle" type="text" maxlength="80" placeholder="예: 업무 정리.xlsx" aria-describedby="tab-title-help"><button id="save-tab-title" type="submit">저장</button></div>
+    </form>
     <button id="retry" type="button">현재 탭에 다시 적용</button>
     <p id="status" role="status">디스코드 웹의 채팅 페이지에서 사용하세요.</p>
   </main>

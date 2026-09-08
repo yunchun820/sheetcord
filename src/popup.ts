@@ -2,13 +2,25 @@ import { chromeSettings, type Settings } from './settings';
 
 const store = chromeSettings();
 const status = document.querySelector<HTMLElement>('#status')!;
-const keys: (keyof Settings)[] = ['enabled', 'showAvatars', 'showEmoji', 'showImages', 'sidebarCollapsed'];
+const keys = ['enabled', 'showAvatars', 'showEmoji', 'showImages', 'sidebarCollapsed'] as const;
+const tabTitle = document.querySelector<HTMLInputElement>('#tabTitle')!;
 const render = (settings: Settings) => {
   for (const key of keys) (document.getElementById(key) as HTMLInputElement).checked = settings[key];
+  if (document.activeElement !== tabTitle) tabTitle.value = settings.tabTitle;
 };
 void store.read().then(render).catch(() => { status.textContent = '설정을 읽지 못했습니다. 확장 프로그램을 다시 로드해 주세요.'; });
 const unsubscribe = store.subscribe(render);
 window.addEventListener('pagehide', unsubscribe, { once: true });
+document.getElementById('tab-settings')!.addEventListener('submit', async event => {
+  event.preventDefault();
+  const save = document.querySelector<HTMLButtonElement>('#save-tab-title')!;
+  save.disabled = true;
+  try {
+    await store.write({ tabTitle: tabTitle.value });
+    status.textContent = '탭 이름을 저장했습니다. Sheetcord가 켜진 디스코드 탭에 적용됩니다.';
+  } catch { status.textContent = '탭 이름을 저장하지 못했습니다. 다시 시도해 주세요.'; }
+  finally { save.disabled = false; }
+});
 for (const key of keys) document.getElementById(key)!.addEventListener('change', async event => {
   const input = event.target as HTMLInputElement;
   try {

@@ -431,6 +431,21 @@ describe('presentation controls preserve native data and actions', () => {
 });
 
 describe('extension lifecycle', () => {
+  it('applies the stored tab name and restores both tab name and favicon on disable', async () => {
+    document.head.insertAdjacentHTML('beforeend', '<title>Discord 원래 이름</title><link rel="icon" href="/discord.ico">');
+    const store = new MemoryStore({ tabTitle: '주간 보고.xlsx' });
+    controller = new SheetcordController(store);
+    await controller.start();
+    await vi.waitFor(() => expect(document.title).toBe('주간 보고.xlsx'));
+    expect(document.querySelector('link[rel="icon"]')!.getAttribute('href')).toMatch(/^data:/);
+    await store.write({ tabTitle: '자료 정리' });
+    await vi.waitFor(() => expect(document.title).toBe('자료 정리'));
+    await store.write({ enabled: false });
+    expect(document.title).toBe('Discord 원래 이름');
+    expect(document.querySelector('link[rel="icon"]')!.getAttribute('href')).toBe('/discord.ico');
+    await store.write({ enabled: true });
+    await vi.waitFor(() => expect(document.title).toBe('자료 정리'));
+  });
   it('covers late profile/status/embedded emoji and restores native controls on disable', async () => {
     const store = new MemoryStore({ showEmoji: false });
     controller = new SheetcordController(store);
@@ -808,7 +823,7 @@ describe('settings privacy and recovery', () => {
       .toEqual({ ...defaults, enabled: false });
     expect(sanitizeSettings(null)).toEqual(defaults);
   });
-  it('persists only the five display settings through chrome.storage.local', async () => {
+  it('persists only the display preferences and custom tab title through chrome.storage.local', async () => {
     const set = vi.fn(async () => {});
     const get = vi.fn(async () => ({ [settingsKey]: { ...defaults, unknown: 'discard' } }));
     vi.stubGlobal('chrome', { storage: { local: { get, set } } });

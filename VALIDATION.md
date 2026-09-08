@@ -1,3 +1,10 @@
+# 0.2.52 탭 아이콘·이름 검증 (2026-09-08)
+
+- TypeScript 검사와 자동 테스트 63개 통과. 탭 아이콘 링크 여러 개·추가·삭제·속성 변경, 사용자 지정 제목 유지, 기존 설정 마이그레이션, 빈 이름·80자 제한, 해제 시 최신 원래 제목·아이콘 복원을 포함합니다.
+- 실제 팝업 HTML과 설정 코드를 사용하는 샘플 DOM 테스트에서 이름 저장·비우기와 기존 이모지 설정 보존을 확인했습니다.
+- 로컬 Chromium 샘플에서 투명 SVG 아이콘 링크 적용, `업무 정리.xlsx` 제목 변경, 새로고침 후 저장 유지, 원래 화면 전환 후 샘플 제목·아이콘 복원을 확인했습니다.
+- 이번 변경의 실제 Chrome·Edge Discord 탭 표시와 사이트 콘텐츠 보안 정책 호환성은 아직 확인하지 못했습니다. 기존 0.2.51 실제 검증 결과를 이번 기능 검증으로 간주하지 않습니다.
+
 # 0.2.51 integration verification (2026-09-08)
 
 - TypeScript check, 56 tests, production build and archive verification pass in the main repository checkout.

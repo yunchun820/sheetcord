@@ -4,15 +4,18 @@ export interface Settings {
   showAvatars: boolean;
   showImages: boolean;
   sidebarCollapsed: boolean;
+  tabTitle: string;
 }
 
-export const defaults: Settings = { enabled: true, showEmoji: false, showAvatars: false, showImages: false, sidebarCollapsed: false };
+export const defaults: Settings = { enabled: true, showEmoji: false, showAvatars: false, showImages: false, sidebarCollapsed: false, tabTitle: '통합 문서1.xlsx' };
 export const settingsKey = 'sheetcord.settings';
 
 export function sanitizeSettings(value: unknown): Settings {
   const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {};
   return Object.fromEntries(Object.entries(defaults).map(([key, fallback]) =>
-    [key, typeof raw[key] === 'boolean' ? raw[key] : fallback])) as unknown as Settings;
+    [key, key === 'tabTitle'
+      ? typeof raw[key] === 'string' ? raw[key].replace(/[\r\n\t]/g, ' ').trim().slice(0, 80) : fallback
+      : typeof raw[key] === 'boolean' ? raw[key] : fallback])) as unknown as Settings;
 }
 
 export interface SettingsStore {

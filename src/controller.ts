@@ -5,6 +5,7 @@ import { MediaController } from './media';
 import { MessageGrid } from './messages';
 import { AvatarController } from './avatars';
 import { AppearanceController } from './appearance';
+import { TabController } from './tab';
 import { defaults, type Settings, type SettingsStore } from './settings';
 import { WorkbookShell } from './shell';
 import theme from './theme.css?inline';
@@ -21,6 +22,7 @@ export class SheetcordController {
   private grid = new MessageGrid();
   private avatars = new AvatarController();
   private appearance = new AppearanceController();
+  private tab = new TabController();
   private shell: WorkbookShell | null = null;
   private style: HTMLStyleElement | null = null;
   private observer: MutationObserver | null = null;
@@ -127,6 +129,7 @@ export class SheetcordController {
       clearTimeout(this.missingTimer);
       this.missingTimer = 0;
       if (!this.shell) this.mount();
+      this.tab.start(this.settings.tabTitle);
       this.decorate(surface);
       this.appearance.sync(surface.root);
       const rows = this.adapter.rows(surface);
@@ -212,6 +215,7 @@ export class SheetcordController {
   }
 
   private stop() {
+    this.tab.clear();
     this.running = false;
     this.observer?.disconnect();
     this.observer = null;
