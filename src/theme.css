@@ -1543,3 +1543,36 @@ html[data-sc-active] #app-mount [data-sc-row] [data-sc-media-layout="expanded"] 
   height: auto !important; min-height: 0 !important; max-height: none !important; aspect-ratio: auto !important;
   grid-template-rows: none !important; grid-auto-rows: auto !important;
 }
+
+/* Keep Discord's virtual channel list measurable while concealing its task pane. */
+html[data-sc-active][data-sc-sidebar-collapsed="true"] #app-mount [data-sc-sidebar] {
+  display: block !important; position: fixed !important; left: 0 !important; right: auto !important;
+  top: var(--sc-top) !important; bottom: var(--sc-bottom) !important;
+  width: 204px !important; min-width: 204px !important; max-width: 204px !important;
+  height: calc(100vh - var(--sc-top) - var(--sc-bottom)) !important; min-height: 1px !important;
+  opacity: 0 !important; clip-path: inset(100%) !important; pointer-events: none !important;
+}
+@media (max-width: 600px) {
+  html[data-sc-active] #app-mount [data-sc-sidebar] {
+    display: block !important; position: fixed !important; left: 0 !important; right: auto !important;
+    top: var(--sc-top) !important; bottom: var(--sc-bottom) !important;
+    width: 204px !important; min-width: 204px !important; max-width: 204px !important;
+    height: calc(100vh - var(--sc-top) - var(--sc-bottom)) !important; min-height: 1px !important;
+    opacity: 0 !important; clip-path: inset(100%) !important; pointer-events: none !important;
+  }
+}
+/* Sticker renderers can add anonymous fixed-size or absolutely positioned frames. */
+html[data-sc-active] #app-mount [data-sc-row] [data-sc-media-layout="compact"] {
+  position: static !important; inset: auto !important; transform: none !important;
+}
+html[data-sc-active] #app-mount [data-sc-row]:has([data-sc-media="collapsed"]):not(:has([data-sc-media="expanded"])),
+html[data-sc-active] #app-mount [data-sc-row]:has([data-sc-media="collapsed"]):not(:has([data-sc-media="expanded"])) > [class*="message_"] {
+  height: auto !important;
+}
+
+html[data-sc-active] #app-mount [data-sc-row] [data-sc-media-layout="expanded"] {
+  position: static !important; inset: auto !important; transform: none !important;
+}
+html[data-sc-active] #app-mount [data-sc-row]:has([data-sc-media]),
+html[data-sc-active] #app-mount [data-sc-row]:has([data-sc-media]) > [class*="message_"] { height: auto !important; }
+html[data-sc-active] #app-mount [data-sc-row]:has([data-sc-media]) > [class*="message_"] { min-height: 0 !important; }

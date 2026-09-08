@@ -60,7 +60,7 @@ export class MediaController {
     const current = new Map<HTMLElement, boolean>();
     for (const { target, expanded } of this.entries.values()) {
       for (let parent = target.parentElement; parent && !parent.matches(selectors.row); parent = parent.parentElement) {
-        if (parent.matches(selectors.mediaLayout)) current.set(parent, Boolean(current.get(parent) || expanded));
+        if (parent.matches(selectors.mediaLayout) || this.isMediaFrame(parent)) current.set(parent, Boolean(current.get(parent) || expanded));
       }
     }
     for (const old of this.layouts) if (!current.has(old)) this.patches.reset(old, 'data-sc-media-layout');
@@ -68,6 +68,18 @@ export class MediaController {
       this.patches.set(layout, 'data-sc-media-layout', expanded ? 'expanded' : 'compact');
     }
     this.layouts = new Set(current.keys());
+  }
+
+  private isMediaFrame(element: HTMLElement): boolean {
+    if (element.matches('[class*="message_"], [class*="contents_"], [data-sc-media], [data-sc-owned]')) return false;
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!node.textContent?.trim() || isOwned(node)) continue;
+      if (!node.parentElement?.closest('[data-sc-media], [class*="hiddenVisually_"]')) return false;
+    }
+    // Preserve non-media interactive content, even when it has no text (e.g. an icon button).
+    return ![...element.querySelectorAll('button, [role="button"], input, textarea')]
+      .some(control => !isOwned(control) && !control.closest('[data-sc-media]'));
   }
 
   private render(entry: MediaEntry) {

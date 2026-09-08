@@ -188,6 +188,17 @@ export class SheetcordController {
     }
     for (const [element, attribute] of this.surfaceMarks) if (marks.get(element) !== attribute) this.patches.reset(element, attribute);
     for (const [element, attribute] of marks) this.patches.set(element, attribute);
+    for (const previous of this.surfaceMarks.keys()) if (previous !== surface.sidebar) {
+      this.patches.reset(previous, 'inert');
+      this.patches.reset(previous, 'aria-hidden');
+    }
+    if (this.settings.sidebarCollapsed || window.innerWidth <= 600) {
+      this.patches.set(surface.sidebar, 'inert');
+      this.patches.set(surface.sidebar, 'aria-hidden', 'true');
+    } else {
+      this.patches.reset(surface.sidebar, 'inert');
+      this.patches.reset(surface.sidebar, 'aria-hidden');
+    }
     this.surfaceMarks = marks;
     if (this.observedForm !== surface.form) {
       this.resizeObserver?.disconnect();
@@ -240,6 +251,7 @@ export class SheetcordController {
     this.grid.clear();
     this.patches.restore();
     this.surfaceMarks.clear();
+    this.adapter.clearNavigationCache();
     this.shell?.destroy();
     this.shell = null;
     this.style?.remove();

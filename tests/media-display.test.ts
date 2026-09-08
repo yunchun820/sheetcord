@@ -48,6 +48,22 @@ it('collapses offscreen expanded media too when all images are collapsed', () =>
   expect(target.dataset.scMedia).toBe('collapsed');
 });
 
+it('compacts unnamed nested sticker frames without stripping a caption or reaction container', () => {
+  const host = document.querySelector<HTMLElement>('.stickerContainer_fixture')!;
+  host.className = 'assetShell_fixture';
+  host.innerHTML = '<div class="layer_fixture" style="position:absolute;height:160px"><div class="stickerAsset_fixture" aria-label="쓰담냥이"><canvas></canvas></div></div>';
+  const original = host.outerHTML;
+  media.sync(rows(), 'route');
+  expect(host.dataset.scMediaLayout).toBe('compact');
+  expect(host.firstElementChild?.getAttribute('data-sc-media-layout')).toBe('compact');
+  host.insertAdjacentHTML('afterbegin', '<p>스티커 설명은 보존합니다.</p>');
+  media.sync(rows(), 'route');
+  expect(host.hasAttribute('data-sc-media-layout')).toBe(false);
+  expect(host.querySelector('p')?.textContent).toBe('스티커 설명은 보존합니다.');
+  host.querySelector('p')!.remove(); media.clear();
+  expect(host.outerHTML).toBe(original);
+});
+
 it('relabels recycled choices, preserves native click/disabled behavior and restores independently', () => {
   const original = root().innerHTML;
   const sticker = document.querySelector<HTMLButtonElement>('#sticker-picker-tab-panel button')!;

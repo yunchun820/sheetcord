@@ -49,6 +49,18 @@ afterEach(() => {
 });
 
 describe('adapter boundary', () => {
+  it('keeps current-server channels through concealed-list unmounts and clears them on server change', () => {
+    const adapter = new DiscordAdapter(); const initial = adapter.channels(surface());
+    document.documentElement.setAttribute('data-sc-sidebar-collapsed', 'true');
+    for (const entry of initial) entry.source.remove();
+    expect(adapter.channels(surface()).map(entry => entry.key)).toEqual(initial.map(entry => entry.key));
+    history.replaceState(null, '', '/channels/100/1003');
+    expect(adapter.channels(surface()).find(entry => entry.selected)?.key).toBe('/channels/100/1003');
+    history.replaceState(null, '', '/channels/200/1003');
+    expect(adapter.channels(surface())).toEqual([]);
+    history.replaceState(null, '', '/channels/100/1003');
+    expect(adapter.channels(surface())).toEqual([]);
+  });
   it('keeps channel shortcuts usable with the sidebar collapsed and a replaced native link', async () => {
     controller = new SheetcordController(new MemoryStore({ sidebarCollapsed: true }));
     await controller.start();
@@ -433,6 +445,21 @@ describe('presentation controls preserve native data and actions', () => {
 });
 
 describe('extension lifecycle', () => {
+  it('navigates cached channels when Discord unmounts the concealed sidebar links', async () => {
+    const store = new MemoryStore(); controller = new SheetcordController(store);
+    await controller.start();
+    await vi.waitFor(() => expect(document.querySelectorAll('.sc-channel-cell')).toHaveLength(8));
+    await store.write({ sidebarCollapsed: true });
+    await vi.waitFor(() => expect(surface().sidebar.hasAttribute('inert')).toBe(true));
+    for (const link of surface().sidebar.querySelectorAll('a[href^="/channels/"]')) link.remove();
+    await wait();
+    document.querySelector<HTMLButtonElement>('.sc-navigation-toggle')!.click();
+    document.querySelector<HTMLButtonElement>('[data-sc-navigation-key="channels"]')!.click();
+    const navigate = vi.spyOn(window.location, 'assign').mockImplementation(() => {});
+    document.querySelector<HTMLButtonElement>('[data-sc-navigation-key="/channels/100/1003"]')!.click();
+    expect(navigate).toHaveBeenCalledWith('/channels/100/1003');
+    expect(store.writes).toEqual([{ sidebarCollapsed: true }]);
+  });
   it('opens top navigation menus with native server and channel actions while the sidebar is collapsed', async () => {
     const store = new MemoryStore({ sidebarCollapsed: true });
     controller = new SheetcordController(store);
@@ -464,6 +491,7 @@ describe('extension lifecycle', () => {
     open('servers');
     await store.write({ enabled: false });
     expect(document.querySelector('.sc-navigation-panel')).toBeNull();
+    expect(document.querySelector('[inert]')).toBeNull();
   });
   it('applies the stored tab name and restores both tab name and favicon on disable', async () => {
     document.head.insertAdjacentHTML('beforeend', '<title>Discord 원래 이름</title><link rel="icon" href="/discord.ico">');

@@ -141,6 +141,11 @@ export class WorkbookShell {
   mount() { document.body.append(this.header, this.bottom); }
 
   render(settings: Settings, tabs: GuildTab[], channel: string, hasEditor: boolean, channels: ChannelEntry[] = []) {
+    const activateChannel = (key: string) => {
+      const source = this.channelSources.get(key);
+      if (source?.isConnected) source.click();
+      else if (source) location.assign(key);
+    };
     this.channelSources = new Map(channels.map(entry => [entry.key, entry.source]));
     this.tabSources = new Map(tabs.map(tab => [tab.key, tab.source]));
     const serverEntries: NavigationEntry[] = tabs.map(tab => ({ ...tab, label: settings.showEmoji ? tab.label : emojiText(tab.label), activate: () => this.tabSources.get(tab.key)?.click() }));
@@ -149,7 +154,7 @@ export class WorkbookShell {
       activate: () => { location.assign('/channels/@me'); },
     });
     this.serverMenu.update(serverEntries);
-    this.channelMenu.update(channels.map(entry => ({ ...entry, label: settings.showEmoji ? entry.label : emojiText(entry.label), activate: () => this.channelSources.get(entry.key)?.click() })));
+    this.channelMenu.update(channels.map(entry => ({ ...entry, label: settings.showEmoji ? entry.label : emojiText(entry.label), activate: () => activateChannel(entry.key) })));
     const channelSignature = JSON.stringify([settings.showEmoji, channels.map(({ source: _source, ...entry }) => entry)]);
     if (channelSignature !== this.channelSignature) {
       this.channelSignature = channelSignature;
@@ -157,7 +162,7 @@ export class WorkbookShell {
       const focused = (document.activeElement as HTMLElement)?.dataset.scChannel;
       this.channels.replaceChildren(...channels.map(entry => {
         const label = settings.showEmoji ? entry.label : emojiText(entry.label);
-        const control = button(label, () => this.channelSources.get(entry.key)?.click(), 'sc-channel-cell');
+        const control = button(label, () => activateChannel(entry.key), 'sc-channel-cell');
         control.dataset.scChannel = entry.key;
         control.title = label;
         if (entry.selected) control.setAttribute('aria-current', 'page');

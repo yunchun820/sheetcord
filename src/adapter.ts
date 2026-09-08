@@ -107,7 +107,10 @@ function guildLabel(source: HTMLElement): string {
 }
 
 export class DiscordAdapter {
+  private channelSnapshot: { server: string; entries: ChannelEntry[] } | null = null;
   constructor(private doc: Document = document) {}
+
+  clearNavigationCache() { this.channelSnapshot = null; }
 
   discover(): Surface | null {
     const root = queryNative<HTMLElement>(this.doc, selectors.root);
@@ -165,15 +168,22 @@ export class DiscordAdapter {
   }
 
   channels(surface: Surface): ChannelEntry[] {
+    const pathname = this.doc.defaultView?.location.pathname ?? '';
+    const server = pathname.split('/')[2] ?? '@me';
+    if (this.channelSnapshot?.server !== server) this.channelSnapshot = null;
     const seen = new Set<string>();
-    return allNative<HTMLAnchorElement>(surface.sidebar, 'a[href^="/channels/"]').flatMap(source => {
+    const entries = allNative<HTMLAnchorElement>(surface.sidebar, 'a[href^="/channels/"]').flatMap(source => {
       const key = source.getAttribute('href')!;
-      if (!/^\/channels\/[^/]+\/[^/]+$/.test(key) || seen.has(key)) return [];
+      if (!/^\/channels\/[^/]+\/[^/]+$/.test(key) || key.split('/')[2] !== server || seen.has(key)) return [];
       seen.add(key);
       const label = cleanLabel(source.querySelector('[class*="name_"], [class*="channelName_"]')?.textContent)
         || accessibleLabel(source) || cleanLabel(source.textContent);
       return label ? [{ key, label, selected: key === this.doc.defaultView?.location.pathname, source }] : [];
     });
+    const concealed = this.doc.documentElement.getAttribute('data-sc-sidebar-collapsed') === 'true'
+      || (this.doc.defaultView?.innerWidth ?? Infinity) <= 600;
+    if (entries.length || !concealed) this.channelSnapshot = { server, entries };
+    return (entries.length ? entries : this.channelSnapshot?.entries ?? []).map(entry => ({ ...entry, selected: entry.key === pathname }));
   }
 
   channelLabel(surface: Surface): string {

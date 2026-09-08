@@ -30,3 +30,22 @@ export function addChromePolishFixture() {
   const panel = document.querySelector('[aria-label="이름 표시 샘플"]')!;
   panel.insertAdjacentHTML('afterbegin', '<button aria-label="고정된 메시지" style="background:#5865f2;color:#5865f2;border:1px solid #5865f2"><span style="color:#5865f2;background:#5865f2">고정된 메시지</span></button>');
 }
+
+export function addConcealRegressionFixture() {
+  addMediaDisplayFixture();
+  const host = document.querySelector<HTMLElement>('.stickerContainer_fixture')!;
+  host.className = 'assetShell_fixture';
+  host.innerHTML = '<div class="layer_fixture" style="position:absolute;height:160px;min-height:160px;padding-bottom:30px"><div class="stickerAsset_fixture" aria-label="쓰담냥이" style="height:160px"><canvas width="160" height="160"></canvas></div></div>';
+  host.closest<HTMLElement>('li')!.style.height = '180px';
+  const sidebar = document.querySelector<HTMLElement>('[aria-label="채널"]')!;
+  const links = [...sidebar.querySelectorAll('a')].map(link => ({ link, parent: link.parentNode!, next: link.nextSibling }));
+  const observer = new ResizeObserver(() => {
+    const measurable = sidebar.clientWidth > 0 && sidebar.clientHeight > 0;
+    for (const { link, parent, next } of links) {
+      if (!measurable) link.remove();
+      else if (!link.isConnected) parent.insertBefore(link, next?.parentNode === parent ? next : null);
+    }
+  });
+  observer.observe(sidebar);
+  window.addEventListener('pagehide', () => observer.disconnect(), { once: true });
+}
