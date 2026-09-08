@@ -12,9 +12,10 @@ export function addMediaDisplayFixture() {
   panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', '이름 표시 샘플');
   panel.style.cssText = 'position:fixed;right:16px;bottom:70px;width:310px;padding:12px;background:white;border:1px solid #888;z-index:300';
   panel.innerHTML = `<p>보내기 목록 이름 표시 샘플</p>
-    <div id="sticker-picker-tab-panel" style="display:flex;gap:4px"><button class="sticker_fixture" aria-label="인사하는 고양이" style="width:130px;height:80px"><canvas width="120" height="70"></canvas></button><button class="sticker_fixture" disabled style="width:130px;height:80px"><img alt="졸린 토끼" src="${sampleImage}"></button></div>
+    <div id="sticker-picker-tab-panel" style="display:flex;gap:4px"><button class="sticker_fixture" aria-label="인사하는 고양이" style="width:130px;height:80px"><div class="assetWrapper_fixture" style="height:70px"><canvas width="120" height="70"></canvas></div></button><button class="sticker_fixture" disabled style="width:130px;height:80px"><img alt="졸린 토끼" src="${sampleImage}"></button></div>
     <div id="gif-picker-tab-panel" style="display:flex"><div class="result_fixture" role="button" tabindex="0" aria-label="박수치는 고양이 GIF" style="width:130px;height:80px;background-image:url('${sampleImage}')"><video aria-label="박수치는 고양이 GIF"></video></div></div>
-    <div id="emoji-picker-tab-panel" style="display:flex"><button class="emojiItem_fixture" data-name="approved" aria-label="승인" style="width:80px;height:40px"><img class="emoji" alt=":approved:" src="${sampleEmoji}"></button></div><p role="status">선택 없음</p>`;
+    <div id="emoji-picker-tab-panel" style="display:flex"><button class="emojiItem_fixture" data-type="emoji" data-name="approved" aria-label="승인" style="width:80px;height:40px"><img class="lockedEmoji_fixture image_fixture" alt=":approved:" src="${sampleEmoji}"></button></div><p role="status">선택 없음</p>
+    <style>.sticker_fixture,.emojiItem_fixture{position:relative}.sticker_fixture::after,.emojiItem_fixture::after{content:"";position:absolute;inset:0;opacity:0;width:100%;height:100%}</style>`;
   panel.addEventListener('click', event => {
     const choice = (event.target as Element).closest<HTMLElement>('button, [role="button"]');
     if (choice) panel.querySelector('[role="status"]')!.textContent = `선택: ${choice.getAttribute('data-sc-picker-label') || choice.getAttribute('aria-label')}`;

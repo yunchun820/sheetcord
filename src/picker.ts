@@ -16,7 +16,7 @@ export class PickerController {
       const candidates = allNative<HTMLElement>(picker, selectors.expressionItem).map(item => {
         const control = item.closest<HTMLElement>('button, [role="button"], [role="gridcell"]');
         return control && picker.contains(control) ? control : item;
-      }).filter(item => !item.closest('[class*="categoryList_"]') && !item.querySelector('[class*="categoryText_"]'));
+      }).filter(item => !item.closest('[class*="categoryList_"], [class*="header_"]') && !item.querySelector('[class*="categoryText_"]'));
       for (const item of new Set(candidates)) {
         // The innermost control handles selection; never replace a surrounding result grid.
         if (candidates.some(other => other !== item && item.contains(other))) continue;

@@ -97,6 +97,18 @@ it('reads referenced names and late alt-only choices without exposing media URLs
   expect(choices.querySelector('[data-sc-picker-label]')).toBeNull();
 });
 
+it('leaves picker category headings intact while labeling native data-type emoji buttons', () => {
+  const panel = document.querySelector('#emoji-picker-tab-panel')!;
+  panel.insertAdjacentHTML('afterbegin', '<div class="header_fixture" role="button"><img alt="샘플 서버"><span>샘플 서버</span></div>');
+  const header = panel.querySelector('.header_fixture')!;
+  const original = header.outerHTML;
+  picker.sync(root(), false, false);
+  expect(header.outerHTML).toBe(original);
+  expect(panel.querySelector('[data-type="emoji"]')?.getAttribute('data-sc-picker-label')).toBe('approved');
+  picker.clear();
+  expect(panel.querySelector('[data-sc-picker-label]')).toBeNull();
+});
+
 it('preserves compact media marks in emoji presentation clones', () => {
   const content = document.querySelector('#message-content-83')!;
   content.insertAdjacentHTML('beforeend', '<div class="stickerContainer_fixture" style="height:160px"><canvas aria-label="하트 스티커"></canvas></div>');

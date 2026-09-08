@@ -406,10 +406,10 @@ html[data-sc-active] #app-mount [data-sc-row] [class*="messageSpine_"]::before,
 html[data-sc-active] #app-mount [data-sc-row] [class*="repliedMessage_"]::after { display: none !important; }
 /* Global guards cover late-rendered media, profiles, search, stickers and pickers. */
 html[data-sc-show-images="false"] #app-mount :is(img, video, canvas, svg image, iframe):not(
-  [data-sc-avatar], [data-sc-avatar] *, .emoji, [class*="emoji"], [data-type="emoji"],
+  [data-sc-avatar], [data-sc-avatar] *, .emoji, [class*="emoji"], [data-type="emoji"], [data-type="emoji"] *, [class*="emojiItem_"] img,
   [data-sc-media="expanded"], [data-sc-media="expanded"] *, [class*="carouselModal_"] *) { display: none !important; }
 html[data-sc-show-emoji="false"] #app-mount :is(img.emoji, img[class*="emoji"], [data-type="emoji"],
-  [class*="emojiItem_"] img, [class*="emojiSprite"], [class*="emojiImage_"]) { display: none !important; }
+  [class*="emojiItem_"] img, [class*="emojiSprite"], [class*="emojiImage_"]):not([data-sc-picker-label]) { display: none !important; }
 html[data-sc-show-avatars="false"] #app-mount :is([data-sc-avatar], [class*="avatar_"],
   [class*="avatarWrapper_"], [class*="avatarContainer_"], img[src*="/avatars/"], img[src*="/embed/avatars/"]) { visibility: hidden !important; }
 html[data-sc-show-images="false"] #app-mount :is([class*="sticker"], [class*="gif"]):is(img, video, canvas):not([data-sc-media="expanded"], [data-sc-media="expanded"] *, [class*="carouselModal_"] *) { display: none !important; }
@@ -1514,11 +1514,16 @@ html[data-sc-active] #app-mount [data-sc-picker-label] :is(img, video, canvas, s
   display: none !important;
 }
 html[data-sc-active] #app-mount [data-sc-picker-label] * { background-image: none !important; }
+/* Remove empty artwork frames as well as their media, preserving accessible labels. */
+html[data-sc-active] #app-mount [data-sc-picker-label] > :not([class*="hiddenVisually_"], [class*="visuallyHidden_"]) { display: none !important; }
 html[data-sc-active] #app-mount [data-sc-picker-label]::after {
-  content: attr(data-sc-picker-label); display: block; padding: 2px; box-sizing: border-box;
-  max-width: 100%; max-height: 100%; overflow: hidden; white-space: normal; overflow-wrap: anywhere;
-  font: 11px/14px 'Segoe UI','Malgun Gothic',sans-serif; color: #243329;
-  pointer-events: none;
+  content: attr(data-sc-picker-label) !important; display: block !important; padding: 2px !important; box-sizing: border-box !important;
+  position: static !important; inset: auto !important; width: auto !important; height: auto !important;
+  opacity: 1 !important; visibility: visible !important; transform: none !important;
+  border: 0 !important; border-radius: 0 !important; background: #f5f7f5 !important; box-shadow: none !important;
+  max-width: 100% !important; max-height: 100% !important; overflow: hidden !important; white-space: normal !important; overflow-wrap: anywhere !important;
+  font: 11px/14px 'Segoe UI','Malgun Gothic',sans-serif !important; color: #243329 !important;
+  pointer-events: none !important;
 }
 html[data-sc-active] #app-mount [data-sc-picker-label]:is(:hover, :focus-visible) {
   outline: 2px solid #217346 !important; outline-offset: -2px !important;
