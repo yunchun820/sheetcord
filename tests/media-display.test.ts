@@ -1,17 +1,62 @@
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { fixtureMarkup } from './fixture';
-import { addMediaDisplayFixture, addStickerInteractionFixture } from './media-display-fixture';
+import { addMediaDisplayFixture, addStickerInteractionFixture, addAttachmentActionsFixture } from './media-display-fixture';
 import { MediaController } from '../src/media';
 import { PickerController } from '../src/picker';
 import { AppearanceController } from '../src/appearance';
 import { EmojiController } from '../src/emoji';
 import { stickerDetails } from '../src/adapter';
+import { addVideoEmbedFixture } from './video-embed-fixture';
 
 const media = new MediaController(); const picker = new PickerController(); const appearance = new AppearanceController();
 const root = () => document.querySelector<HTMLElement>('#app-mount')!;
 const rows = () => [...document.querySelectorAll<HTMLElement>('li[id^="chat-messages-"]')];
 beforeEach(() => { document.body.innerHTML = fixtureMarkup(); addMediaDisplayFixture(); });
 afterEach(() => { media.clear(); picker.clear(); appearance.clear(); document.body.replaceChildren(); });
+
+it('compacts multi-image grids with attachment actions and preserves native controls on restore', () => {
+  const list = addAttachmentActionsFixture();
+  const original = list.innerHTML;
+  const edit = list.querySelector<HTMLElement>('[aria-label="첨부 파일 수정"]')!;
+  const action = vi.fn(); edit.addEventListener('click', action);
+  media.sync(rows(), 'attachments'); appearance.sync(root());
+  for (const selector of ['.threeByTwoGrid_fixture', '.mediaColumn_fixture', '.imageContainer_fixture'])
+    expect(list.querySelector(selector)?.getAttribute('data-sc-media-layout')).toBe('compact');
+  expect(list.querySelectorAll('.sc-media-toggle')).toHaveLength(3);
+  expect(edit.textContent).toBe('수정');
+  expect(edit.getAttribute('aria-label')).toBe('첨부 파일 수정');
+  const toggles = list.querySelectorAll<HTMLButtonElement>('.sc-media-toggle');
+  toggles[1].click();
+  expect(list.querySelectorAll('[data-sc-media="expanded"]')).toHaveLength(1);
+  expect(action).not.toHaveBeenCalled();
+  media.collapseAll();
+  media.clear(); appearance.clear();
+  expect(list.innerHTML).toBe(original);
+  edit.click(); expect(action).toHaveBeenCalledOnce();
+});
+
+it('keeps embedded video expanded across native preview replacement and restores its play label', () => {
+  const accessories = addVideoEmbedFixture();
+  const play = accessories.querySelector<HTMLElement>('[aria-label="게임 시작"]')!;
+  media.sync(rows(), 'video'); appearance.sync(root());
+  expect(play.getAttribute('aria-label')).toBe('영상 재생');
+  expect(accessories.querySelectorAll('.sc-media-toggle')).toHaveLength(1);
+  const toggle = accessories.querySelector<HTMLButtonElement>('.sc-media-toggle')!;
+  expect(toggle.textContent).toBe('+ 영상 펼치기');
+  toggle.click();
+  expect(play.closest('[data-sc-media]')?.getAttribute('data-sc-media')).toBe('expanded');
+  appearance.clear();
+  expect(play.getAttribute('aria-label')).toBe('게임 시작');
+  play.click();
+  media.sync(rows(), 'video');
+  expect(accessories.querySelectorAll('.sc-media-toggle')).toHaveLength(1);
+  expect(accessories.querySelector('iframe')?.closest('[data-sc-media]')?.getAttribute('data-sc-media')).toBe('expanded');
+  media.collapseAll();
+  expect(accessories.querySelector('iframe')?.closest('[data-sc-media]')?.getAttribute('data-sc-media')).toBe('collapsed');
+  media.clear();
+  expect(accessories.querySelector('iframe')).not.toBeNull();
+  expect(accessories.querySelector('[data-sc-media], .sc-media-toggle')).toBeNull();
+});
 
 it('collapses mosaic/sticker spacers, labels canvas stickers once and restores original dimensions', () => {
   const before = rows().map(row => row.innerHTML);

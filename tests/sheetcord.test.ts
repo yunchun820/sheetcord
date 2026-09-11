@@ -8,8 +8,9 @@ import { MediaController } from '../src/media';
 import { MessageGrid } from '../src/messages';
 import { defaults, sanitizeSettings, chromeSettings, settingsKey, type Settings, type SettingsStore } from '../src/settings';
 import { fixtureMarkup, messageMarkup } from './fixture';
-import { addDarkSidebarFixture } from './sidebar-fixture';
+import { addDarkSidebarFixture, addSidebarThreadsFixture } from './sidebar-fixture';
 import { addMessageParityFixture } from './message-parity-fixture';
+import { addSystemEmbedFixture } from './system-embed-fixture';
 import { readFileSync } from 'node:fs';
 
 class MemoryStore implements SettingsStore {
@@ -49,6 +50,60 @@ afterEach(() => {
 });
 
 describe('adapter boundary', () => {
+  it('inserts newly mounted child rows beside their parent without treating categories as channels', () => {
+    addSidebarThreadsFixture();
+    const adapter = new DiscordAdapter();
+    const groups = [...surface().sidebar.querySelectorAll('ul')];
+    const slots = groups.map(group => ({ group, parent: group.parentElement! }));
+    groups.forEach(group => group.remove());
+    expect(adapter.channels(surface()).map(e => e.key)).toEqual(['/channels/100/1000', '/channels/100/1001']);
+    slots.forEach(({group, parent}) => parent.append(group));
+    surface().sidebar.insertAdjacentHTML('beforeend', '<div role="button" data-list-item-id="channels___9999" aria-expanded="true">카테고리</div>');
+    const entries = adapter.channels(surface());
+    expect(entries.map(e => e.key.split('/').pop())).toEqual(['1000','1100','1101','1102','1001','1110','1111','1112']);
+    expect(entries.filter(e => e.child)).toHaveLength(6);
+    expect(entries.find(e => e.key.endsWith('/1102'))?.unread).toBe(true);
+    adapter.channels(surface());
+    expect(adapter.channels(surface())).toHaveLength(8);
+    history.replaceState(null, '', '/channels/200/1000');
+    // Old sidebar button IDs must never be reinterpreted as the newly selected server.
+    expect(adapter.channels(surface())).toEqual([]);
+  });
+  it('lays out notices and rich content without replacing native actions, and restores recycled rows', () => {
+    addSystemEmbedFixture();
+    const all = rows();
+    const original = all.map(row => row.outerHTML);
+    const grid = new MessageGrid();
+    const media = new MediaController();
+    const greeting = document.querySelector<HTMLButtonElement>('.welcomeCTA_fixture button')!;
+    const action = vi.fn(); greeting.addEventListener('click', action);
+    grid.sync(all, location.pathname); media.sync(all, location.pathname);
+    expect(all[1].querySelector('.sc-row-author')?.textContent).toBe('안내');
+    expect(all[2].querySelector('.sc-row-author')?.textContent).toBe('안내');
+    expect(all[3].querySelector('.sc-row-author')?.textContent).toBe('담당자');
+    expect(all[0].hasAttribute('data-sc-wide')).toBe(false);
+    for (const row of all.slice(1)) expect(row.hasAttribute('data-sc-wide')).toBe(true);
+    expect(greeting.hasAttribute('data-sc-media')).toBe(false);
+    expect(greeting.parentElement?.querySelector('.sc-media-toggle')).toBeNull();
+    greeting.click(); expect(action).toHaveBeenCalledTimes(1);
+    media.clear(); grid.clear();
+    expect(all.map(row => row.outerHTML)).toEqual(original);
+    grid.sync(all, location.pathname);
+    all[4].querySelector('[id^="message-content-"]')!.textContent = '짧게 수정';
+    grid.sync(all, location.pathname);
+    expect(all[4].hasAttribute('data-sc-wide')).toBe(false);
+    grid.sync([], location.pathname);
+    expect(document.querySelector('[data-sc-wide], [data-sc-system]')).toBeNull();
+    grid.clear();
+  });
+  it('does not mistake embed attribution and dates for message metadata', () => {
+    addSystemEmbedFixture();
+    const rich = rows()[3]; rich.querySelector('.header_fixture')?.remove();
+    const grid = new MessageGrid(); grid.sync([rich], location.pathname);
+    expect(rich.querySelector('.sc-row-author')?.textContent).toBe('—');
+    expect(rich.querySelector('.sc-row-time')?.textContent).toBe('—');
+    grid.clear();
+  });
   it('keeps current-server channels through concealed-list unmounts and clears them on server change', () => {
     const adapter = new DiscordAdapter(); const initial = adapter.channels(surface());
     document.documentElement.setAttribute('data-sc-sidebar-collapsed', 'true');
@@ -445,6 +500,22 @@ describe('presentation controls preserve native data and actions', () => {
 });
 
 describe('extension lifecycle', () => {
+  it('conceals empty loading shells across composer resizing and restores native layout on disable', async () => {
+    const wrapper = document.querySelector<HTMLElement>('.imageWrapper_fixture')!;
+    wrapper.replaceChildren(); wrapper.style.height = '320px';
+    const store = new MemoryStore(); controller = new SheetcordController(store);
+    await controller.start();
+    await vi.waitFor(() => expect(getComputedStyle(wrapper).display).toBe('none'));
+    const form = surface().form!;
+    vi.spyOn(form, 'getBoundingClientRect').mockReturnValue({ height: 72 } as DOMRect);
+    window.dispatchEvent(new Event('resize'));
+    await vi.waitFor(() => expect(document.querySelector('style[data-form-height="80"]')).not.toBeNull());
+    expect(getComputedStyle(wrapper).display).toBe('none');
+    await store.write({ enabled: false });
+    await vi.waitFor(() => expect(document.documentElement.hasAttribute('data-sc-active')).toBe(false));
+    expect(getComputedStyle(wrapper).display).not.toBe('none');
+    expect(wrapper.style.height).toBe('320px');
+  });
   it('navigates cached channels when Discord unmounts the concealed sidebar links', async () => {
     const store = new MemoryStore(); controller = new SheetcordController(store);
     await controller.start();
@@ -454,7 +525,6 @@ describe('extension lifecycle', () => {
     for (const link of surface().sidebar.querySelectorAll('a[href^="/channels/"]')) link.remove();
     await wait();
     [...document.querySelectorAll<HTMLButtonElement>('.sc-navigation-toggle')].find(button => button.textContent === '삽입')!.click();
-    document.querySelector<HTMLButtonElement>('[data-sc-navigation-key="channels"]')!.click();
     const navigate = vi.spyOn(window.location, 'assign').mockImplementation(() => {});
     document.querySelector<HTMLButtonElement>('[data-sc-navigation-key="/channels/100/1003"]')!.click();
     expect(navigate).toHaveBeenCalledWith('/channels/100/1003');
@@ -464,15 +534,15 @@ describe('extension lifecycle', () => {
     const store = new MemoryStore({ sidebarCollapsed: true });
     controller = new SheetcordController(store);
     await controller.start();
-    await vi.waitFor(() => expect(document.querySelectorAll('.sc-navigation-toggle')).toHaveLength(2));
+    await vi.waitFor(() => expect(document.querySelectorAll('.sc-navigation-toggle')).toHaveLength(3));
     const openers = [...document.querySelectorAll<HTMLButtonElement>('.sc-navigation-toggle')];
     const insert = openers.find(button => button.textContent === '삽입')!;
     const file = openers.find(button => button.textContent === '파일')!;
     expect([...document.querySelector('.sc-menubar')!.children].slice(0, 4).map(node => node.textContent)).toEqual(['파일', '홈', '삽입', '페이지 레이아웃']);
     const open = (key: string) => {
       (key === 'servers' ? file : insert).click();
-      expect(document.querySelectorAll('.sc-navigation-item')).toHaveLength(1);
-      document.querySelector<HTMLButtonElement>(`[data-sc-navigation-key="${key}"]`)!.click();
+      expect(document.querySelector('.sc-navigation-panel')?.getAttribute('aria-label')).toBe(key === 'servers' ? '서버 목록' : '채널 목록');
+      expect(document.querySelectorAll('.sc-navigation-item').length).toBeGreaterThan(1);
     };
     open('servers');
     expect(document.querySelector('.sc-navigation-item')!.textContent).toBe('개인 메시지');
@@ -495,6 +565,28 @@ describe('extension lifecycle', () => {
     await store.write({ enabled: false });
     expect(document.querySelector('.sc-navigation-panel')).toBeNull();
     expect(document.querySelector('[inert]')).toBeNull();
+  });
+  it('lists active child threads/posts in the ribbon and one-click menu, even with the sidebar hidden', async () => {
+    addSidebarThreadsFixture();
+    const store = new MemoryStore({ sidebarCollapsed: true });
+    controller = new SheetcordController(store); await controller.start();
+    await vi.waitFor(() => expect(document.querySelectorAll('.sc-channel-cell')).toHaveLength(8));
+    const source = document.querySelector<HTMLElement>('[data-list-item-id="channels___1101"]')!;
+    const action = vi.fn(); source.addEventListener('click', action);
+    const ribbon = document.querySelector<HTMLButtonElement>('[data-sc-channel="/channels/100/1101"]')!;
+    expect(ribbon.textContent).toMatch(/^↳ /);
+    ribbon.click(); expect(action).toHaveBeenCalledTimes(1);
+    const insert = [...document.querySelectorAll<HTMLButtonElement>('.sc-navigation-toggle')].find(e => e.textContent === '삽입')!;
+    insert.click();
+    expect(document.querySelectorAll('.sc-navigation-item')).toHaveLength(8);
+    document.querySelector<HTMLButtonElement>('[data-sc-navigation-key="/channels/100/1101"]')!.click();
+    expect(action).toHaveBeenCalledTimes(2);
+    await vi.waitFor(() => expect(document.querySelector('[data-sc-channel="/channels/100/1101"]')?.getAttribute('aria-current')).toBe('page'));
+    source.remove(); await wait();
+    insert.click();
+    const navigate = vi.spyOn(window.location, 'assign').mockImplementation(() => {});
+    document.querySelector<HTMLButtonElement>('[data-sc-navigation-key="/channels/100/1101"]')!.click();
+    expect(navigate).toHaveBeenCalledWith('/channels/100/1101');
   });
   it('applies the stored tab name and restores both tab name and favicon on disable', async () => {
     document.head.insertAdjacentHTML('beforeend', '<title>Discord 원래 이름</title><link rel="icon" href="/discord.ico">');

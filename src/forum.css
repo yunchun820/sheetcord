@@ -1,0 +1,48 @@
+/* Channel actions live in View; native search remains independently available. */
+/* Native view selection is brief; retain its layout and keyboard behavior. */
+html[data-sc-forum-switching] #sort-and-view { opacity: 0 !important; pointer-events: none !important; }
+html[data-sc-active] #app-mount [data-sc-native-header] [class*="toolbar_"]:has(> [role="button"]) { display: contents !important; }
+/* Retain a measurable anchor below the ribbon for Discord's own popovers. */
+html[data-sc-active] #app-mount [data-sc-native-header] [class*="toolbar_"] > [role="button"] {
+  display: block !important; position: fixed !important; left: min(480px, calc(100vw - 240px)) !important; top: calc(var(--sc-top) + 8px) !important;
+  width: 1px !important; height: 1px !important; min-width: 0 !important; margin: 0 !important; padding: 0 !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;
+}
+/* Collapse the former editor frame without hiding its fixed formula editor. */
+html[data-sc-active] #app-mount [class*="mainCard_"][class*="header_"]:has([class*="collapsed_"] > [data-sc-form]),
+html[data-sc-active] #app-mount [class*="mainCard_"][class*="header_"] [class*="collapsed_"]:has(> [data-sc-form]) {
+  height: 0 !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; background: transparent !important;
+}
+/* Native list view retains Discord's measured rows and virtual-list spacers. */
+html[data-sc-active] #app-mount [class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"]) {
+  grid-template-columns: minmax(0, 1fr) 150px !important; min-height: 80px !important; border-radius: 0 !important;
+}
+html[data-sc-active] #app-mount [class*="mainCard_"] [class*="postTitleText_"] { font-weight: 600 !important; }
+html[data-sc-active] #app-mount [class*="mainCard_"] [class*="message_"] { min-width: 0 !important; line-height: 20px !important; }
+html[data-sc-active] #app-mount [class*="mainCard_"] [class*="footer_"] { display: flex !important; align-items: center !important; flex-wrap: wrap !important; gap: 8px !important; padding-top: 4px !important; border-top: 1px solid #e1e6e2 !important; }
+html[data-sc-active] #app-mount [class*="mainCard_"] [class*="reaction_"]:not([data-sc-emoji-original]) { display: inline-flex !important; margin: 0 !important; background: #f3f6f4 !important; border: 1px solid #cbd3cc !important; border-radius: 0 !important; }
+html[data-sc-active] #app-mount [class*="mainCard_"] [class*="reactionInner_"] { display: inline-flex !important; flex-direction: row !important; align-items: center !important; gap: 5px !important; padding: 2px 6px !important; font: 11px/18px 'Segoe UI','Malgun Gothic',sans-serif !important; }
+html[data-sc-active] #app-mount [class*="mainCard_"] [class*="reactionInner_"]:not(:has([class*="reactionCount_"]))::after { content: '0'; }
+html[data-sc-active] #app-mount [class*="mainCard_"] [class*="messageCountBox_"] svg { display: none !important; }
+html[data-sc-active] #app-mount [class*="mainCard_"] [class*="messageCountBox_"]::before { content: '댓글 '; font: 11px/18px 'Segoe UI','Malgun Gothic',sans-serif; }
+html[data-sc-active] #app-mount [class*="mainCard_"] [data-sc-emoji-original] { display: none !important; }
+html[data-sc-active][data-sc-show-emoji="true"] #app-mount [class*="mainCard_"] img.emoji { display: inline-block !important; width: 14px !important; height: 14px !important; }
+html[data-sc-active] #app-mount [class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"]) [class*="bodyMedia_"]:not(:has([data-sc-media="expanded"])),
+html[data-sc-active] #app-mount [class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"]) [data-sc-media-layout="compact"] {
+  height: auto !important; min-height: 0 !important; max-height: none !important; width: auto !important; max-width: 100% !important;
+  aspect-ratio: auto !important; margin: 0 !important; padding: 0 !important;
+}
+html[data-sc-active] #app-mount [class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"]) [class*="bodyMedia_"] { padding: 8px !important; }
+html[data-sc-active] #app-mount [class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"]) [class*="bodyMedia_"]:not(:has(.sc-media-toggle)) > * { display: none !important; }
+html[data-sc-active] #app-mount [class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"]) [class*="bodyMedia_"]:not(:has(.sc-media-toggle))::after { content: '이미지 로딩 중'; color: #64766a; font: 11px/20px 'Segoe UI','Malgun Gothic',sans-serif; }
+html[data-sc-active] #app-mount [class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"]) > :last-child:has([data-sc-media="expanded"]) { grid-column: 1 / -1; border-top: 1px solid #d5ddd7; }
+html[data-sc-active] #app-mount [class*="mainCard_"]:has([data-sc-media="expanded"]) > [class*="left_"] { grid-column: 1 / -1; border-right: 0 !important; }
+html[data-sc-active] #app-mount [class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"]) [data-sc-media-layout="expanded"] { height: auto !important; min-height: 0 !important; max-height: none !important; width: auto !important; max-width: 100% !important; aspect-ratio: auto !important; }
+html[data-sc-active] #app-mount [class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"]) [data-sc-media-layout] { display: block !important; text-align: left !important; }
+html[data-sc-active] #app-mount [class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"]) [data-sc-media="expanded"] img { display: block !important; max-width: 100% !important; height: auto !important; max-height: none !important; object-fit: contain !important; }
+html[data-sc-active] #app-mount [class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"]) :is([data-sc-media="expanded"], [data-sc-media="expanded"] [class*="loadingOverlay_"]) { height: auto !important; min-height: 0 !important; aspect-ratio: auto !important; }
+html[data-sc-active] #app-mount [class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"]) [data-sc-media="expanded"]:not(:has(img, video, canvas, iframe))::after { content: '이미지 로딩 중'; display: block; padding: 8px; font: 11px/20px 'Segoe UI','Malgun Gothic',sans-serif; }
+html[data-sc-active] #app-mount [class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"]) .sc-media-toggle { display: block !important; margin: 0 !important; font: 11px/20px 'Segoe UI','Malgun Gothic',sans-serif !important; }
+@media (max-width: 600px) {
+  html[data-sc-active] #app-mount [class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"]) { grid-template-columns: minmax(0,1fr) !important; }
+  html[data-sc-active] #app-mount [class*="mainCard_"] [class*="left_"] { border-right: 0 !important; }
+}

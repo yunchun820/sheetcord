@@ -1,7 +1,7 @@
-import { DiscordAdapter, type Surface } from './adapter';
-import { DomPatches, isOwned, button, owned } from './dom';
+import { DiscordAdapter, selectors, type Surface } from './adapter';
+import { DomPatches, isOwned, button, owned, allNative } from './dom';
 import { EmojiController } from './emoji';
-import { MediaController } from './media';
+import { MediaController, mediaLoadingStyle } from './media';
 import { MessageGrid } from './messages';
 import { AvatarController } from './avatars';
 import { AppearanceController } from './appearance';
@@ -9,9 +9,12 @@ import { TabController } from './tab';
 import { PickerController } from './picker';
 import { ChannelScanner } from './channel-scan';
 import { ThreadExcerpts } from './thread-excerpts';
+import { ForumView } from './forum-view';
 import { defaults, type Settings, type SettingsStore } from './settings';
 import { WorkbookShell } from './shell';
 import theme from './theme.css?inline';
+import forumTheme from './forum.css?inline';
+const worksheetTheme = theme + mediaLoadingStyle + forumTheme;
 
 export class SheetcordController {
   private settings: Settings = { ...defaults };
@@ -29,6 +32,7 @@ export class SheetcordController {
   private picker = new PickerController();
   private channelScanner = new ChannelScanner();
   private threadExcerpts = new ThreadExcerpts();
+  private forumView = new ForumView(message => this.shell?.message(message));
   private shell: WorkbookShell | null = null;
   private style: HTMLStyleElement | null = null;
   private observer: MutationObserver | null = null;
@@ -105,6 +109,8 @@ export class SheetcordController {
     });
     window.addEventListener('popstate', this.schedule);
     window.addEventListener('resize', this.schedule);
+    document.addEventListener('focusout', this.schedule);
+    document.addEventListener('visibilitychange', this.schedule);
     this.schedule();
   }
 
@@ -145,15 +151,19 @@ export class SheetcordController {
       this.picker.sync(surface.root, false, this.settings.showEmoji);
       this.appearance.sync(surface.root);
       const rows = this.adapter.rows(surface);
+      const posts = allNative<HTMLElement>(surface.root, selectors.forumCard);
       this.grid.sync(rows, location.pathname, this.settings.showEmoji);
       this.threadExcerpts.sync(rows, location.pathname);
       this.avatars.sync(surface.root, rows);
-      this.media.sync(rows, location.pathname);
+      // Gallery card geometry is virtualized; expandable rows use native list view.
+      this.media.sync([...rows, ...posts.filter(post => post.matches(selectors.forumListCard))], location.pathname);
       const emojiSources = this.settings.showEmoji ? []
         : [...this.adapter.emojiLabels(surface), ...this.appearance.emojiSources(surface.root)];
-      this.emoji.sync(rows, this.settings.showEmoji, emojiSources);
-      this.shell!.render(this.settings, tabs, this.adapter.channelLabel(surface), Boolean(surface.form), this.adapter.channels(surface));
+      this.emoji.sync([...rows, ...posts], this.settings.showEmoji, emojiSources);
+      const controls = surface.header ? allNative<HTMLElement>(surface.header, '[class*="toolbar_"] > [role="button"][aria-label]') : [];
+      this.shell!.render(this.settings, tabs, this.adapter.channelLabel(surface), Boolean(surface.form), this.adapter.channels(surface), controls);
       this.scanChannels(surface);
+      this.forumView.sync(surface.root, location.pathname);
       this.patches.prune();
     } catch {
       this.fail('화면 적용 중 문제가 생겨 원래 디스코드 화면으로 복원했습니다.');
@@ -162,7 +172,7 @@ export class SheetcordController {
 
   private mount() {
     this.style = owned('style');
-    this.style.textContent = theme;
+    this.style.textContent = worksheetTheme;
     document.head.append(this.style);
     this.shell = new WorkbookShell({
       update: patch => this.updateSettings(patch),
@@ -243,11 +253,12 @@ export class SheetcordController {
     if (this.style && (geometry !== String(height) || this.style.dataset.sheetGap !== String(gap))) {
       this.style.dataset.formHeight = String(height);
       this.style.dataset.sheetGap = String(gap);
-      this.style.textContent = `${theme}\nhtml[data-sc-active]{--sc-form-height:${height}px;--sc-sheet-right-gap:${gap}px}`;
+      this.style.textContent = `${worksheetTheme}\nhtml[data-sc-active]{--sc-form-height:${height}px;--sc-sheet-right-gap:${gap}px}`;
     }
   }
 
   private stop() {
+    this.forumView.clear();
     this.threadExcerpts.clear();
     this.channelScanner.clear();
     this.tab.clear();
@@ -264,6 +275,8 @@ export class SheetcordController {
     this.frame = this.missingTimer = this.geometryFrame = 0;
     window.removeEventListener('popstate', this.schedule);
     window.removeEventListener('resize', this.schedule);
+    document.removeEventListener('focusout', this.schedule);
+    document.removeEventListener('visibilitychange', this.schedule);
     this.emoji.clear();
     this.picker.clear();
     this.appearance.clear();

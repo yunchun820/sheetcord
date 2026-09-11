@@ -1,5 +1,5 @@
 import { allNative } from './dom';
-import type { ChannelEntry } from './adapter';
+import { selectors, type ChannelEntry } from './adapter';
 
 /** Visit the native virtual list, then restore its scroll position. No private APIs. */
 export class ChannelScanner {
@@ -14,7 +14,7 @@ export class ChannelScanner {
     const scroller = [sidebar, ...allNative<HTMLElement>(sidebar, '*')].reverse().find(node =>
       node.clientHeight > 0 && node.scrollHeight > node.clientHeight + 1
       && /auto|scroll/.test(getComputedStyle(node).overflowY)
-      && node.querySelector('a[href^="/channels/"]'));
+      && node.querySelector(selectors.sidebarChannel));
     if (!scroller) return;
     this.active = server;
     const originalTop = scroller.scrollTop;

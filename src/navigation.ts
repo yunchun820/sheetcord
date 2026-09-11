@@ -6,6 +6,7 @@ export interface NavigationEntry {
   selected: boolean;
   unread?: boolean;
   folder?: boolean;
+  child?: boolean;
   activate(): void;
 }
 
@@ -30,7 +31,7 @@ export class NavigationMenu {
 
   update(entries: NavigationEntry[]) {
     this.entries = entries;
-    const signature = JSON.stringify(entries.map(({ key, label, selected, unread, folder }) => ({ key, label, selected, unread, folder })));
+    const signature = JSON.stringify(entries.map(({ key, label, selected, unread, folder, child }) => ({ key, label, selected, unread, folder, child })));
     if (signature !== this.signature) { this.signature = signature; this.render(); }
   }
 
@@ -111,7 +112,7 @@ export class NavigationMenu {
       control.dataset.scNavigationKey = entry.key;
       control.title = entry.label;
       const label = owned('span');
-      label.textContent = `${entry.folder ? '▸ ' : ''}${entry.label}`;
+      label.textContent = `${entry.child ? '↳ ' : entry.folder ? '▸ ' : ''}${entry.label}`;
       control.append(label);
       if (entry.selected) control.setAttribute('aria-current', 'page');
       if (entry.unread) {

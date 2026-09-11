@@ -4,6 +4,7 @@ import { selectors, accessibleLabel, stickerDetails } from './adapter';
 
 const mediaControl = (control: HTMLElement) => Boolean(control.closest('[class*="imageWrapper"], [class*="videoWrapper_"], [class*="embedThumbnail_"]') || control.querySelector('[class*="loadingOverlay_"], video, canvas') || (control.querySelector(selectors.mediaLeaf) && stickerDetails(control)));
 const formIconControl = '[data-sc-form] [class*="prefixElement_"] [role="button"][class*="iconLayout_"][aria-hidden="false"]';
+const reactionControl = (control: HTMLElement) => control.matches('[class*="reactionInner_"]');
 
 /** Presentation only: native controls and their event handlers stay in place. */
 export class AppearanceController {
@@ -17,14 +18,14 @@ export class AppearanceController {
     for (const old of this.pinned) if (!pinned.has(old)) this.patches.reset(old, 'data-sc-pinned-control');
     for (const control of pinned) this.patches.set(control, 'data-sc-pinned-control');
     this.pinned = pinned;
-    for (const [control, label] of this.labels) if (!control.isConnected || !root.contains(control) || mediaControl(control) || control.closest(selectors.expressionPicker)) {
+    for (const [control, label] of this.labels) if (!control.isConnected || !root.contains(control) || mediaControl(control) || reactionControl(control) || control.closest(selectors.expressionPicker)) {
       label.remove();
       this.patches.reset(control, 'data-sc-text-control');
       this.labels.delete(control);
     }
     for (const control of allNative<HTMLElement>(root, `button[aria-label], [role="button"][aria-label], [role="menuitem"] [aria-label], [data-sc-form] [aria-label], [role="button"][class*="reactionBtn_"], [class*="panels_"] button[aria-describedby], [class*="panels_"] [class*="clickablePing_"], ${formIconControl}`)) {
       if (control.closest('[data-sc-guilds], [data-sc-sidebar] a, [contenteditable="true"]')) continue;
-      if (mediaControl(control)) continue;
+      if (mediaControl(control) || reactionControl(control)) continue;
       if (control.closest(selectors.expressionPicker)) continue;
       const nativeText = [...control.childNodes].filter(node => !isOwned(node)).map(node => node.textContent).join('').trim();
       const accountControl = control.matches('[class*="accountPopoutButton_"]');
@@ -34,7 +35,12 @@ export class AppearanceController {
       const iconLabel = control.matches(formIconControl) ? control.querySelector('svg[aria-hidden="false"][aria-label]')?.getAttribute('aria-label') : null;
       const raw = control.getAttribute('aria-label') ?? iconLabel ?? (control.matches('[class*="reactionBtn_"]') ? '반응 추가' : description);
       if (!raw) continue;
-      const value = raw.replace(/^메시지 보내기 .+$/, '대화').replace(/^기타 options for .+$/, '기타')
+      // Discord uses a generic localized "play" name for this video-only control.
+      const videoPlay = control.closest('[class*="embedVideoActions_"]') && raw === '게임 시작';
+      if (videoPlay) this.patches.set(control, 'aria-label', '영상 재생');
+      const attachmentAction = control.closest('[class*="hoverButtonGroup_"]');
+      const compactRaw = attachmentAction ? raw.replace(/^첨부 파일 수정$/, '수정').replace(/^메시지 첨부 파일 제거$/, '제거') : raw;
+      const value = (videoPlay ? '영상 재생' : compactRaw).replace(/^메시지 보내기 .+$/, '대화').replace(/^기타 options for .+$/, '기타')
         .replace('더 많은 메시지 옵션', '첨부').replace('GIF 선택기 열기', 'GIF').replace('스티커 선택기 열기', '스티커')
         .replace('서버에 초대하기', '초대').replace('채널 만들기', '+').replace('프로필 및 상태 관리', '프로필 · 상태')
         .replace('Krisp가 제공하는 잡음 제거', '잡음 제거').replace('화면 공유하기', '화면 공유').replace('활동 시작하기', '활동').replace('사운드보드 열기', '사운드보드')

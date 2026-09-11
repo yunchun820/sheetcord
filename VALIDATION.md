@@ -1,3 +1,45 @@
+# 0.4.0 포럼 자동 목록 보기·누적 개선 배포 (2026-09-11)
+
+- 포럼 진입·새로고침 시 네이티브 정렬/보기 메뉴의 목록 항목을 한 번 선택합니다. 메뉴·항목 ID와 원래 버튼은 DOM 어댑터에서 찾으며 React 내부 상태·계정 토큰·자체 API를 사용하지 않습니다. 서버 채널 설정이나 갤러리의 가상 스크롤 좌표는 변경하지 않습니다. 별도 저장 설정도 추가하지 않습니다.
+- 이미 목록이거나 사용자가 직접 보기 메뉴를 조작한 경우 같은 방문 중에는 다시 강제로 바꾸지 않습니다. 채널 재진입·다시 적용 시에는 초기 선택을 수행합니다. 입력 중·다른 메뉴/대화상자 사용 중·숨긴 탭에서는 미루고 포커스/표시 상태 변경 시 다시 확인합니다.
+- 메뉴가 늦게 나타나거나 구조가 달라지면 최대 2초 안에 전환을 종료합니다. 해제·이동·사용자 입력 중단 후에는 선택을 수행하지 않습니다. 취소 전에 요청된 React 메뉴가 뒤늦게 뜨는 경우만 닫도록 최대 2초의 정리 처리를 남기며 이후 감시를 제거합니다. 사용자 초안과 현재 보기의 원래 디스코드 서식은 보존합니다.
+- 자동 테스트 116개 및 타입 검사 통과. 합성 브라우저에서 자동 목록 선택 → 수동 갤러리 유지 → 새로고침 후 자동 목록 복귀, 메뉴/임시 표식 정리, 좁은 창의 표 서식을 확인했습니다. 테스트에는 지연 메뉴·입력 중 보류·메뉴 구조 불일치·전환 시간 초과·취소/이동과 재진입을 포함합니다.
+- 0.4.0 최종 확장을 실제 Chrome에 적용했습니다. 포럼 새로고침 후 자동 목록 전환(목록 항목 8개/갤러리 0개), 수동 갤러리 선택 유지(카드 11개), 다시 새로고침 후 자동 목록 복귀, 일반 채널(메시지 행 30개·원래 입력기 유지)을 거친 포럼 재진입을 확인했습니다. 전환 후 메뉴와 임시 표식은 남지 않았고 이미지도 400×225px로 펼쳐졌다가 접혔습니다. 점검 후 처음 열려 있던 일반 채널로 돌아왔으며 메시지 전송이나 반응 추가는 하지 않았습니다. 0.3.6.6의 실제 이미지/포럼 검증과 이전 버전의 메시지·첨부 전송 기록은 아래에 구분해 남깁니다. Edge 실제 계정과 Windows IME 조합 중 Enter 수동 검증은 미완료입니다.
+
+# 0.3.6.6 포럼 목록·채널 도구 서식 (2026-09-11)
+
+- 실제 Chrome 포럼의 갤러리/목록 DOM을 확인하고 현재 페이지를 디스코드의 목록 보기로 전환했습니다. 갤러리의 절대 배치·가상 스크롤 높이를 임의로 변경하지 않습니다. 확장 코드에서 보기 설정을 자동 변경하지 않으며 펼침/접기는 목록의 포스트 행에 적용합니다.
+- 목록 포스트의 제목·본문 미리보기·반응과 미디어를 정리했습니다. 이미지 로딩 틀을 짧은 안내로 표시하고 펼친 이미지에 남던 고정 높이·종횡비를 제거했습니다. 포스트 ID별 펼침 상태와 가상 DOM 교체를 구분하며 일반 메시지 행으로 장식하지 않습니다.
+- 포럼의 반응 이모지 숨김을 이름과 개수로 표시합니다. 개수가 없는 기본 반응은 0으로 표시하며 긴 접근성 설명을 시각 라벨로 복제하지 않습니다. 원래 접근성 설명·클릭·이모지 복원을 유지합니다.
+- 본문을 덮던 채널 도구를 상단 보기 메뉴에서 엽니다. 네이티브 검색 입력은 유지하고, 고정 입력줄의 원래 포럼 외곽 프레임만 접습니다.
+- 합성 브라우저 샘플: 1280px 화면에서 접힌 포스트 95px, 이미지 펼침 311.7px, 이미지 자체 400×166.7px. 다시 접으면 95px로 복원했습니다. 500px 프레임에서는 접힌 행 121px, 이미지 로딩 행도 펼치기 버튼을 포함해 121px이며 행의 가로 넘침과 다음 행 겹침이 없었습니다. 원래 입력기 외곽 틀은 0px이고 입력기는 계속 보입니다.
+- 실제 적용 중 목록 행 99px, 반응 이름/개수, 빈 입력 틀 0px를 확인했습니다. 재접속 시 디스코드가 갤러리 보기로 돌아가는 현상도 확인해 현재 페이지는 목록으로 다시 선택했습니다. 지연 로딩 썸네일의 빈 래퍼에도 펼침 버튼을 추가하고, 채널 도구의 원래 팝업이 리본 아래를 기준으로 열리도록 보완했습니다.
+- 자동 테스트 110개: 기존 회귀 검사, 포스트 반응 이벤트·복원, 이모지 원본 표시, 포스트 재활용별 이미지 상태, 갤러리 원래 구조 유지, 보기 메뉴의 원래 동작 연결·메뉴 전환을 포함합니다. 최종본 실제 Chrome 적용 확인: 지연 로딩 이미지 400×225px, 펼친 포스트 367px, 다시 접은 포스트 99px. 반응 이모지 7개가 그림/이름으로 왕복 복원됐으며 인접 포스트 겹침은 없었습니다. 채널 알림 메뉴는 리본 아래에서 열렸고 원래 채널 버튼의 잔상도 제거했습니다. 이미지·이모지는 점검 전 숨김 상태로 돌려놓았습니다. 실제 대화·계정 식별자·이미지는 저장하지 않았습니다.
+
+# 0.3.6.5 상단 하위 대화 목록·직접 열기 (2026-09-11)
+
+- 채널 링크 외에 네이티브 `typeThread` 버튼 행도 수집합니다. 상단 바로가기와 삽입 목록에서 하위 스레드·포스트를 `↳`로 표시하며 선택·읽지 않은 상태를 반영합니다. 새로 마운트된 항목은 캐시 끝 대신 주변 채널 옆에 삽입합니다.
+- 가상 목록에 스레드 버튼만 남은 경우에도 스크롤 수집을 시작합니다. 카테고리 버튼은 이동 항목에 포함하지 않으며 서버 전환 중 이전 사이드바의 버튼 ID를 새 서버로 해석하지 않도록 처리합니다. 연결된 항목은 원래 클릭을 사용하고, 숨긴 목록에서 제거된 항목은 관찰한 ID의 채널 경로로 이동합니다.
+- 파일/삽입의 중간 메뉴를 제거했습니다. 한 번 클릭하면 각각 검색 가능한 서버/채널 목록이 열리며 탭 이름은 유지합니다. 재클릭 닫기·Escape·포커스 복원·메뉴 전환·해제 정리는 기존 NavigationMenu를 사용합니다.
+- 합성 브라우저 샘플에서 왼쪽 창 숨김 상태의 채널 2개+하위 항목 6개, 하위 항목 클릭 이동, 파일/삽입 한 번 클릭, 긴 이름 줄바꿈과 읽지 않은 표시를 확인했습니다. 샘플의 기존 서버 클릭 처리도 하위 채널 클릭과 구분했습니다. 실제 계정에 수정본 적용 후 점검은 남아 있습니다.
+- TypeScript 및 자동 테스트 105개: 기존 검사와 함께 하위 버튼 수집/정렬, 숨김 목록의 원래 이벤트·경로 이동, 범주 제외와 서버 전환, 스레드만 마운트된 가상 목록을 검증합니다.
+
+# 0.3.4 안내 기록·임베드 서식 (2026-09-10)
+
+- 입장·부스트 등 시스템 메시지의 B열을 `안내`로 구분하고 C열 이후를 사용합니다. 기본 장식과 중복 시간을 숨기고 원래 사용자 링크·인사 버튼은 유지합니다. 인사 버튼 안의 작은 스티커를 첨부파일로 오인해 버튼 전체가 접히는 문제도 수정했습니다.
+- 임베드는 제목·설명·항목/값·미디어·기록을 별도 행과 두 열로 정리합니다. 긴 글, 여러 줄 내용, 펼친 미디어는 남은 열을 사용합니다. 원래 메시지 노드와 이벤트·가상 목록 구조는 교체하지 않습니다.
+- 실제 Chrome의 입장 메시지와 YouTube 임베드 DOM을 읽어 구조를 확인했습니다. 이후 기존 탭 연결에서 `Debugger unattached`가 발생했으며 새 점검 탭은 로그인 화면으로 이동했습니다. **수정본의 실제 계정 적용 및 실제 부스트 알림 확인은 아직 완료하지 않았습니다.** 실제 대화·계정 식별자·스크린샷은 저장소에 넣지 않았습니다.
+- 합성 Chrome 샘플: 일반/부스트 행 39px, 인사 버튼을 포함한 입장 행 69px(이모지 숨김). 임베드 이미지는 320×180px로 펼쳐지고 메시지 높이가 436→636→436px로 복원됐으며 다음 행과 겹치지 않았습니다. 500px 폭의 프레임에서도 항목/값과 긴 링크가 줄바꿈되는 화면을 확인했습니다.
+- 자동 테스트 99개: 시스템 구분, 임베드 작성자·날짜의 메타데이터 오인 방지, 인사 버튼 이벤트 보존, 긴 내용 수정·재활용 후 표식 제거, 해제 시 원래 DOM 복원과 기존 회귀 검사를 포함합니다.
+
+# 0.3.3 미디어 로딩 중 행 높이 (2026-09-09)
+
+- 이미지·canvas가 아직 없는 빈 로딩 틀은 미디어 처리 대상이 아니고, DOM 교체 후 다음 프레임까지 접기 표시가 없는 구간도 있었습니다. 합성 샘플에서 이미지 행 최대 340px, 스티커 행 최대 208.5px의 일시적인 확장을 재현했습니다.
+- 활성 메시지 목록의 아직 처리되지 않은 이미지·스티커 로딩 틀을 CSS에서 먼저 숨깁니다. 미디어만 있는 새 행은 격자 장식 전에도 한 줄 높이를 유지합니다. 이미 펼친 항목과 접기 버튼은 보호 규칙에서 제외하고, 입력창 높이 재계산 때도 보호 스타일을 유지합니다.
+- `?media-loading` 샘플에서 빈 틀 삽입 → 그림 추가 → 이미지 DOM 교체 → 스티커 canvas 삽입·교체를 60프레임 측정했습니다. 수정 후 첫 프레임을 포함해 이미지·스티커 행 최대 높이는 모두 39px였습니다. 본문과 일반 파일 링크는 계속 보였습니다.
+- 로딩 완료 후 이미지 240×100px, 스티커 160×160px로 정상 펼침을 확인했습니다. 펼친 항목 내부의 미디어도 보호 규칙에서 제외해, 스티커 내부 그림의 실제 표시 높이 160px까지 Chrome 샘플에서 확인했습니다. 자동 테스트에는 빈 로딩 틀 숨김, 입력창 크기 변경 후 유지, 확장 해제 시 원래 스타일 복원을 추가했습니다. TypeScript 및 테스트 97개 통과.
+- 실제 Chrome의 스티커 래퍼 구조, 로딩 보호 스타일 적용, 접힌 스티커 행 높이 39px를 확인했습니다. 내부 그림 제외까지 반영한 최종본은 같은 설치 폴더에 있으며 마지막 확장 새로고침 확인은 대기 중입니다. 60프레임 수치는 네트워크 업로드가 아닌 합성 DOM 단계 재현 결과입니다.
+
 # 0.3.2 채널 목록의 스레드·포스트 서식 (2026-09-08)
 
 - 실제 Chrome의 하위 포스트·스레드는 일반 채널의 앵커와 달리 typeThread 래퍼 아래 role=button으로 표시되어 기존 셀 서식이 적용되지 않았습니다. 기본 검은 연결선과 긴 제목의 잘림이 남아 있었습니다.
@@ -197,3 +239,28 @@ Codex 내장 Chromium 브라우저, 1280 × 720 기준:
 - 실제 Discord 업데이트 전후 복원 및 다시 적용.
 
 다음 검증에는 사용자의 명시적인 `discord.com` 브라우저 접근 승인과 로그인된 페이지가 필요합니다. 실제 전송 테스트는 사용자가 지정하고 승인한 테스트 대화·문구에서만 진행합니다.
+
+
+## 0.3.6.1 embedded video fix (2026-09-10)
+- Retains 0.3.6 layout. Actual Discord DOM showed native video play aria-label 게임 시작 and a replacement YouTube iframe hidden by the global media guard. No native playback or messages triggered during inspection.
+- Video preview/actions share one media toggle, labeled 영상; expansion survives native preview-to-iframe replacement. Video-only play name becomes 영상 재생 and restores on disable. Embedded iframe keeps 16:9 dimensions within available width.
+- TypeScript and 100 automated tests passed, including replacement, collapse-all and original label/DOM restoration. Local Chrome preview-to-iframe transition: visible 400x225 iframe, no display:none ancestors; at600px no document overflow; collapse hides player. Local fixture uses about:blank, so this is not an actual YouTube playback verification. Installed-extension retest pending.
+
+
+## 0.3.6.2 media row alignment and embed controls (2026-09-10)
+- Actual DOM: the pre-decoration39px media rule also matched a nested native message with data-list-item-id inside an already decorated row. Two-line author cell58.8px but message39px. Exclude all descendants of decorated rows from that temporary clamp.
+- Exclude media toggles and suppress control from embed content-row padding. Previously a20px toggle had5px vertical padding and clipped text. Suppress control is an absolute overlay exposed on hover/focus-within, retaining its native action. No destructive action executed.
+- Local Chrome with observed nested selector: author/message/row each58.8px. Toggle clientHeight=scrollHeight20px, padding0; reactions start5.8px below. Suppress opacity0 normally,1 with focus inside embed, position absolute. TypeScript and100 tests pass. Actual installed build retest pending.
+
+
+## 0.3.6.3 collapsed attachment lists and actions (2026-09-10)
+- Actual Discord attachment structure inspected read-only: hoverButtonGroup is a sibling of imageWrapper inside imageContainer. Its text/controls prevented media-only ancestor compaction; static positioning moved the absolute toolbar away from its item.
+- Treat attachment action groups as part of media-only frames while still preserving other interactive content. Collapsed multi-image grids become a vertical list. Native actions keep aria-labels and handlers with compact visible labels 수정/제거; each40x20 control is anchored to its item and revealed on hover/focus-within.
+- Local three-image fixture: shared left edge484px,24px item spacing,80x20 action group; expanding the second image shows only its group. At320px, each item reserves44px height and the toggle client/scroll widths both94px, document scrollWidth320. Viewport reset.
+- TypeScript and101 tests pass including native handlers, individual expansion, layout compaction and DOM restoration. Actual installed release retest remains pending; no real attachment edit/removal performed.
+
+
+## 0.3.6.4 edited attachment-only spacing (2026-09-10)
+- Actual two affected Discord rows contained whitespace plus timestamp/edited markup and no message text. Hidden metadata left a20px body line; toggle began29px below row top.
+- Mark metadata-only content and collapse its empty box. Real text or content-bearing elements keep the body visible; marker restores when text arrives and on disable.
+- Local native-shape fixture: content height0/display none; attachment toggle starts9px below row top, matching author top padding9px. TypeScript and102 tests passed including text/link changes and native DOM restoration. Built and packaged0.3.6.4; installed release retest pending.

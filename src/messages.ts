@@ -36,6 +36,8 @@ export class MessageGrid {
       this.emptyCells.get(row)?.forEach(cell => cell.remove());
       this.emptyCells.delete(row);
       row.removeAttribute('data-sc-row');
+      this.authorPatches.reset(row, 'data-sc-wide');
+      this.authorPatches.reset(row, 'data-sc-system');
       this.gutters.delete(row);
     }
     let previousAuthor = '';
@@ -44,6 +46,24 @@ export class MessageGrid {
     const minutes: { row: HTMLElement; key: string; time: string }[] = [];
     for (const row of rows) {
       row.dataset.scRow = '';
+      for (const content of allNative<HTMLElement>(row, selectors.content)) {
+        // Edited attachment-only messages contain whitespace plus a hidden timestamp.
+        // Do not collapse real text, links, emoji or other content-bearing elements.
+        const metadataOnly = content.childNodes.length > 0 && [...content.childNodes].every(node =>
+          node.nodeType === Node.TEXT_NODE ? !node.textContent?.trim()
+            : node instanceof HTMLElement && node.matches(`[class*="timestamp_"], ${selectors.visuallyHidden}`));
+        if (metadataOnly) this.authorPatches.set(content, 'data-sc-empty-content');
+        else this.authorPatches.reset(content, 'data-sc-empty-content');
+      }
+      const system = row.matches(selectors.systemMessage) || allNative(row, selectors.systemMessage).length > 0;
+      const wide = system || allNative(row, selectors.richEmbed).length > 0
+        || allNative<HTMLElement>(row, selectors.content).some(content =>
+          (content.textContent?.trim().length ?? 0) > 100 || content.textContent?.trim().includes('\n')
+          || content.querySelector('br, pre, blockquote, ul, ol, table'));
+      if (system) this.authorPatches.set(row, 'data-sc-system');
+      else this.authorPatches.reset(row, 'data-sc-system');
+      if (wide) this.authorPatches.set(row, 'data-sc-wide');
+      else this.authorPatches.reset(row, 'data-sc-wide');
       const key = row.id || row.getAttribute('data-list-item-id') || '';
       if (!this.ordinal.has(key)) this.ordinal.set(key, this.ordinal.size + 1);
       let gutter = this.gutters.get(row);
@@ -53,7 +73,7 @@ export class MessageGrid {
         this.gutters.set(row, gutter);
       }
       const metadata = <T extends HTMLElement>(selector: string) => allNative<T>(row, selector).find(node =>
-        !node.closest(`${selectors.visuallyHidden}, [data-sc-thread-card], [class*="repliedMessage_"], [class*="messageSnapshot_"]`)
+        !node.closest(`${selectors.visuallyHidden}, ${selectors.richEmbed}, [data-sc-thread-card], [class*="repliedMessage_"], [class*="messageSnapshot_"]`)
         && (node.closest(selectors.row) === row || node.closest(selectors.row)?.parentElement === row));
       const authorNode = metadata<HTMLElement>(selectors.author);
       const timeNode = metadata<HTMLTimeElement>('time');
@@ -62,18 +82,18 @@ export class MessageGrid {
         currentAuthors.add(authorName);
         this.authorPatches.set(authorName, 'data-sc-author-control');
       }
-      const author = authorName?.textContent?.trim() || previousAuthor || '—';
+      const author = system ? '안내' : authorName?.textContent?.trim() || previousAuthor || '—';
       const datetime = timeNode?.getAttribute('datetime');
       const date = datetime ? new Date(datetime) : null;
       const time = date && !Number.isNaN(date.getTime())
         ? new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }).format(date)
-        : timeNode?.textContent?.trim() || previousTime || '—';
+        : timeNode?.textContent?.trim() || (system ? '' : previousTime) || '—';
       const minute = date && !Number.isNaN(date.getTime()) ? String(Math.floor(date.getTime() / 60000))
         : timeNode ? time : previousMinute;
       minutes.push({ row, key: minute, time });
       previousMinute = minute;
-      previousAuthor = author;
-      previousTime = time;
+      previousAuthor = system ? '' : author;
+      previousTime = system ? '' : time;
       // Ordinals are local display references, never Discord message positions.
       const values = [String(this.ordinal.get(key)), time, showEmoji ? author : emojiText(author)];
       const signature = JSON.stringify(values);

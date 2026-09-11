@@ -1,5 +1,11 @@
 /** Synthetic markup reproducing the observed nested channel and composer layout. */
 export function addChannelAuditFixture() {
+  for (const category of document.querySelectorAll<HTMLElement>('.channel-category')) {
+    const label = category.textContent;
+    category.classList.add('wrapperCommon_audit');
+    category.innerHTML = '<h3 class="name_audit"><span class="container_audit"></span></h3>';
+    category.querySelector('span')!.textContent = label;
+  }
   for (const link of document.querySelectorAll('.channel-link')) {
     const label = link.querySelector('span');
     if (!label) continue;

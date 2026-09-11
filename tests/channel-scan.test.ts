@@ -4,8 +4,9 @@ import { ChannelScanner } from '../src/channel-scan';
 let scanner: ChannelScanner;
 let sidebar: HTMLElement;
 let top: number;
+let threadsOnly = false;
 beforeEach(() => {
-  scanner = new ChannelScanner(); top = 350;
+  scanner = new ChannelScanner(); top = 350; threadsOnly = false;
   history.replaceState(null, '', '/channels/100/1');
   document.body.innerHTML = '<nav style="overflow-y:auto"></nav>';
   sidebar = document.querySelector('nav')!;
@@ -17,10 +18,20 @@ beforeEach(() => {
 });
 function render() {
   sidebar.innerHTML = Array.from({ length: 2 }, (_, offset) => Math.floor(top / 100) + offset)
-    .map(id => `<a href="/channels/100/${id}">채널 ${id}</a>`).join('');
+    .map(id => threadsOnly
+      ? `<div class="typeThread_fixture"><div role="button" data-list-item-id="channels___${id}">채널 ${id}</div></div>`
+      : `<a href="/channels/100/${id}">채널 ${id}</a>`).join('');
 }
-const collect = () => [...sidebar.querySelectorAll('a')].map(source => ({ key: source.getAttribute('href')!, label: source.textContent!, selected: false, source }));
+const collect = () => [...sidebar.querySelectorAll<HTMLElement>('a, [data-list-item-id]')].map(source => ({ key: source.getAttribute('href') || `/channels/100/${source.getAttribute('data-list-item-id')!.replace('channels___','')}`, label: source.textContent!, selected: false, source }));
 afterEach(() => { scanner.clear(); document.body.replaceChildren(); });
+
+it('finds the virtual scroller when only child thread buttons are currently mounted', async () => {
+  threadsOnly = true; render();
+  const finish = vi.fn(); scanner.scan(sidebar, '100', collect, finish);
+  await vi.waitFor(() => expect(finish).toHaveBeenCalledOnce(), { timeout: 2000 });
+  expect(finish.mock.calls[0][0].map((entry: {key: string}) => entry.key)).toEqual(Array.from({length:10},(_,i)=>`/channels/100/${i}`));
+  expect(top).toBe(350);
+});
 
 it('collects every virtual channel in order and restores the original scroll offset', async () => {
   const finish = vi.fn();

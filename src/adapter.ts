@@ -7,10 +7,21 @@ export const selectors = {
   guilds: '[data-list-id="guildsnav"], nav[class*="guilds_"]',
   guildItem: '[data-list-item-id^="guildsnav___"]',
   sidebar: '[class*="sidebarList_"], nav[aria-label="Channels"], nav[aria-label="채널"], [class*="privateChannels_"]',
+  sidebarChannel: 'a[href^="/channels/"], [class*="typeThread_"] :is([role="button"], button)[data-list-item-id^="channels___"]',
   chat: 'main[class*="chatContent_"], [role="main"][class*="chatContent_"]',
   list: '[data-list-id="chat-messages"]',
   row: 'li[id^="chat-messages-"], [data-list-item-id^="chat-messages___"]',
   content: '[id^="message-content-"]',
+  systemMessage: '[class*="isSystemMessage_"], [class*="systemMessage_"], [class*="systemMessageContainer_"]',
+  richEmbed: '[class*="embedFull_"]',
+  forumListCard: '[class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"])',
+  forumThumbnail: '[class*="bodyMedia_"] [class*="imageWrapper_"]',
+  forumGallery: '[data-grid-item-id^="forum-grid-view___"]',
+  forumList: '[data-list-item-id^="forum-channel-list-"]',
+  forumSortButton: '[class*="headerRow_"] button[class*="sortDropdown_"]',
+  forumViewMenu: '#sort-and-view[role="menu"]',
+  forumViewList: '#sort-and-view-view-as-list[role="menuitemradio"]',
+  forumCard: '[class*="mainCard_"]:has(> [data-list-item-id^="forum-channel-list-"]), li[class*="mainCard_"]:has(> [data-grid-item-id^="forum-grid-view___"])',
   visuallyHidden: '[class*="hiddenVisually_"], [class*="visuallyHidden_"]',
   threadName: '[class*="threadName_"]',
   threadCard: '[role="button"][aria-roledescription="스레드 열기 버튼"], [class*="container_"]:has(> [class*="topLine_"] > [class*="name_"]):has(> [class*="bottomLine_"])',
@@ -50,7 +61,7 @@ export interface GuildTab {
   source: HTMLElement;
 }
 
-export interface ChannelEntry { key: string; label: string; selected: boolean; source: HTMLElement }
+export interface ChannelEntry { key: string; label: string; selected: boolean; source: HTMLElement; child?: boolean; unread?: boolean }
 
 // A nonempty attribute may still be visually blank (spaces, zero-width characters).
 // Keep ZWJ/ZWNJ intact: they are meaningful in emoji sequences and some scripts.
@@ -111,9 +122,10 @@ function guildLabel(source: HTMLElement): string {
 
 export class DiscordAdapter {
   private channelSnapshot: { server: string; entries: ChannelEntry[] } | null = null;
+  private sidebarServers = new WeakMap<HTMLElement, string>();
   constructor(private doc: Document = document) {}
 
-  clearNavigationCache() { this.channelSnapshot = null; }
+  clearNavigationCache() { this.channelSnapshot = null; this.sidebarServers = new WeakMap(); }
 
   discover(): Surface | null {
     const root = queryNative<HTMLElement>(this.doc, selectors.root);
@@ -174,19 +186,35 @@ export class DiscordAdapter {
     const pathname = this.doc.defaultView?.location.pathname ?? '';
     const server = pathname.split('/')[2] ?? '@me';
     if (this.channelSnapshot?.server !== server) this.channelSnapshot = null;
+    const sidebarServer = allNative<HTMLAnchorElement>(surface.sidebar, 'a[href^="/channels/"]')
+      .map(source => source.getAttribute('href')?.match(/^\/channels\/([^/]+)\/[^/]+$/)?.[1]).find(Boolean);
+    if (sidebarServer) this.sidebarServers.set(surface.sidebar, sidebarServer);
     const seen = new Set<string>();
-    const entries = allNative<HTMLAnchorElement>(surface.sidebar, 'a[href^="/channels/"]').flatMap(source => {
-      const key = source.getAttribute('href')!;
+    const entries = allNative<HTMLElement>(surface.sidebar, selectors.sidebarChannel).flatMap(source => {
+      const id = source.getAttribute('data-list-item-id')?.match(/^channels___(\d+)$/)?.[1];
+      if (!source.hasAttribute('href') && this.sidebarServers.has(surface.sidebar) && this.sidebarServers.get(surface.sidebar) !== server) return [];
+      const key = source.getAttribute('href') || (id ? `/channels/${server}/${id}` : '');
       if (!/^\/channels\/[^/]+\/[^/]+$/.test(key) || key.split('/')[2] !== server || seen.has(key)) return [];
       seen.add(key);
       const label = cleanLabel(source.querySelector('[class*="name_"], [class*="channelName_"]')?.textContent)
         || accessibleLabel(source) || cleanLabel(source.textContent);
-      return label ? [{ key, label, selected: key === this.doc.defaultView?.location.pathname, source }] : [];
+      const child = Boolean(source.closest('[class*="typeThread_"]'));
+      const unread = Boolean(source.closest('[class*="modeUnread_"]') || source.querySelector('[class*="unread_"]'));
+      return label ? [{ key, label, selected: key === pathname, source, child, unread }] : [];
     });
-    const merged = new Map(this.channelSnapshot?.entries.map(entry => [entry.key, entry]) ?? []);
-    for (const entry of entries) merged.set(entry.key, entry);
-    this.channelSnapshot = { server, entries: [...merged.values()] };
-    return this.channelSnapshot.entries.map(entry => ({ ...entry, selected: entry.key === pathname }));
+    const merged = [...(this.channelSnapshot?.entries ?? [])];
+    entries.forEach((entry, index) => {
+      const existing = merged.findIndex(item => item.key === entry.key);
+      if (existing >= 0) { merged[existing] = entry; return; }
+      // Insert newly mounted children beside their visible neighbours, not at the end of a cached server.
+      const previous = index ? merged.findIndex(item => item.key === entries[index - 1].key) : -1;
+      const next = entries.slice(index + 1).map(item => merged.findIndex(old => old.key === item.key)).find(position => position >= 0);
+      merged.splice(previous >= 0 ? previous + 1 : next ?? merged.length, 0, entry);
+    });
+    this.channelSnapshot = { server, entries: merged };
+    return merged.map(entry => ({ ...entry, selected: entry.key === pathname || Boolean(entry.child && entry.source.isConnected
+      && (entry.source.matches('[aria-selected="true"], [aria-current="page"]')
+        || entry.source.closest('[class*="typeThread_"][class*="modeSelected_"]'))) }));
   }
 
   replaceChannels(entries: ChannelEntry[]) {
@@ -208,7 +236,7 @@ export class DiscordAdapter {
   }
 
   emojiLabels(surface: Surface): HTMLElement[] {
-    return allNative<HTMLElement>(surface.sidebar, 'a[href^="/channels/"] [class*="name_"], a[href^="/channels/"] [class*="channelName_"]');
+    return allNative<HTMLElement>(surface.sidebar, `:is(${selectors.sidebarChannel}) :is([class*="name_"], [class*="channelName_"])`);
   }
 
   focusSearch(): boolean {

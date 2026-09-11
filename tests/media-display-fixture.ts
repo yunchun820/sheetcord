@@ -1,5 +1,18 @@
 import { messageMarkup, sampleImage, sampleEmoji } from './fixture';
 
+export function addAttachmentActionsFixture() {
+  const list = document.querySelector('[data-list-id="chat-messages"]')!;
+  list.innerHTML = messageMarkup(95, '첨부 샘플', ' <span class="timestamp_fixture"><span><time><span class="edited_fixture">(수정됨)</span></time></span><span class="hiddenVisually_fixture">수정 시간</span></span>');
+  const item = (id: number) => `<div class="mosaicItem_fixture" style="overflow:hidden"><div class="imageContainer_fixture" style="position:relative;display:flex">
+    <div class="imageWrapper_fixture"><img src="${sampleImage}" alt="첨부 ${id}" width="240" height="100"></div>
+    <div class="hoverButtonGroup_fixture" style="position:absolute;right:0;top:0;display:flex">
+      <div class="hoverButton_fixture" role="button" tabindex="0" aria-label="첨부 파일 수정"><svg width="20" height="20"></svg></div>
+      <div class="hoverButton_fixture" role="button" tabindex="0" aria-label="메시지 첨부 파일 제거"><svg width="20" height="20"></svg></div>
+    </div><div class="sizer_fixture"></div></div></div>`;
+  list.querySelector('.accessories_fixture')!.innerHTML = `<div class="visualMediaItemContainer_fixture"><div class="threeByTwoGrid_fixture" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${item(1)}<div class="mediaColumn_fixture" style="display:grid;grid-template-rows:1fr 1fr">${item(2)}${item(3)}</div></div></div>`;
+  return list;
+}
+
 export function addMediaDisplayFixture() {
   const list = document.querySelector('[data-list-id="chat-messages"]')!;
   list.innerHTML = messageMarkup(81, '이미지', '') + messageMarkup(82, '스티커', '')

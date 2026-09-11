@@ -4,6 +4,28 @@ import { emojiText } from './emoji';
 
 interface MediaEntry { target: HTMLElement; control: HTMLButtonElement; key: string; expanded: boolean }
 
+// CSS applies even between native DOM insertion and our next animation-frame sync.
+// Include empty loading shells: they may exist for seconds before an img/canvas does.
+const loadingVisual = `:is(${selectors.attachment}, [class*="stickerContainer_"], [class*="stickerWrapper_"], [class*="stickerAsset_"], [class*="clickableSticker"])`;
+const loadingRow = `html[data-sc-active] #app-mount :is(${selectors.row})`;
+const unmanaged = ':not([data-sc-media]):not([data-sc-media] *):not([class*="welcomeCTA_"] *):not([data-sc-media-layout]):not(:has([data-sc-media], .sc-media-toggle))';
+export const mediaLoadingStyle = `
+${loadingRow} ${loadingVisual}${unmanaged},
+${loadingRow} :is([class*="mosaic"], [class*="attachmentContainer_"], [class*="mediaContainer_"]):has(${loadingVisual})${unmanaged} {
+  display: none !important;
+}
+${loadingRow}:has(${loadingVisual}):not(:has([data-sc-media="expanded"])) {
+  height: auto !important; min-height: 38px !important;
+}
+${loadingRow}:has(${loadingVisual}):not(:has([data-sc-media="expanded"])) > [class*="message_"] {
+  height: auto !important; min-height: 0 !important;
+}
+/* Before grid decoration, a media-only row still has Discord's normal author header. */
+${loadingRow}:not([data-sc-row], [data-sc-row] *):has(${loadingVisual}):not(:has([id^="message-content-"]:not(:empty), [data-sc-media="expanded"])) {
+  height: 39px !important; min-height: 39px !important; max-height: 39px !important; overflow: hidden !important;
+}
+`;
+
 /** Hide only the visual wrapper. Spoiler overlays stay inside it and remain untouched. */
 export class MediaController {
   private entries = new Map<HTMLElement, MediaEntry>();
@@ -29,10 +51,15 @@ export class MediaController {
     }
     const active = new Set<HTMLElement>();
     for (const row of rows) {
-      const leaves = [...row.querySelectorAll<HTMLElement>(selectors.mediaLeaf)].filter(leaf =>
-        !isOwned(leaf) && !leaf.closest(`${selectors.avatar}, ${selectors.visuallyHidden}, [data-sc-avatar], [class*="avatarDecoration_"], [class*="clanTagChiplet_"], [class*="messageChipletContainerInner_"], img[src*="/clan-badges/"], .emoji, [class*="emoji"], [data-type="emoji"]`)
+      // Lazy forum thumbnails may not mount an img until their wrapper is visible.
+      const thumbnailShells = row.matches(selectors.forumListCard) ? [...row.querySelectorAll<HTMLElement>(selectors.forumThumbnail)] : [];
+      const leaves = [...row.querySelectorAll<HTMLElement>(`${selectors.mediaLeaf}, [class*="embedVideo_"] iframe`), ...thumbnailShells].filter(leaf =>
+        !isOwned(leaf) && !leaf.closest(`${selectors.avatar}, ${selectors.visuallyHidden}, [class*="welcomeCTA_"], [data-sc-avatar], [class*="avatarDecoration_"], [class*="clanTagChiplet_"], [class*="messageChipletContainerInner_"], img[src*="/clan-badges/"], .emoji, [class*="emoji"], [data-type="emoji"]`)
       );
       const candidates = [...new Set(leaves.map(leaf => {
+        // Manage the preview, native play controls and replacement iframe as one video.
+        const embedVideo = leaf.closest<HTMLElement>('[class*="embedVideo_"]');
+        if (embedVideo && row.contains(embedVideo)) return embedVideo;
         if (stickerDetails(leaf)) {
           // Keep extension controls outside native sticker click/capture handlers.
           let action: HTMLElement | null = null;
@@ -48,7 +75,8 @@ export class MediaController {
       const targets = candidates.filter(target => !candidates.some(other => other !== target && other.contains(target)));
       targets.forEach((target, index) => {
         active.add(target);
-        const key = `${route}:${row.id || row.getAttribute('data-list-item-id')}:${index}`;
+        const key = `${route}:${row.id || row.getAttribute('data-list-item-id') || row.getAttribute('data-item-id')
+          || row.querySelector('[data-grid-item-id]')?.getAttribute('data-grid-item-id')}:${index}`;
         let entry = this.entries.get(target);
         if (entry && entry.key !== key) {
           entry.control.remove();
@@ -78,7 +106,7 @@ export class MediaController {
   private syncLayouts() {
     const current = new Map<HTMLElement, boolean>();
     for (const { target, expanded } of this.entries.values()) {
-      for (let parent = target.parentElement; parent && !parent.matches(selectors.row); parent = parent.parentElement) {
+      for (let parent = target.parentElement; parent && !parent.matches(`${selectors.row}, ${selectors.forumCard}`); parent = parent.parentElement) {
         if (parent.matches(selectors.mediaLayout) || this.isMediaFrame(parent)) current.set(parent, Boolean(current.get(parent) || expanded));
       }
     }
@@ -94,11 +122,11 @@ export class MediaController {
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       if (!node.textContent?.trim() || isOwned(node)) continue;
-      if (!node.parentElement?.closest('[data-sc-media], [class*="hiddenVisually_"]')) return false;
+      if (!node.parentElement?.closest('[data-sc-media], [class*="hiddenVisually_"], [class*="hoverButtonGroup_"]')) return false;
     }
     // Preserve non-media interactive content, even when it has no text (e.g. an icon button).
     return ![...element.querySelectorAll('button, [role="button"], input, textarea')]
-      .some(control => !isOwned(control) && !control.closest('[data-sc-media]'));
+      .some(control => !isOwned(control) && !control.closest('[data-sc-media], [class*="hoverButtonGroup_"]'));
   }
 
   private render(entry: MediaEntry) {
@@ -107,7 +135,7 @@ export class MediaController {
     const sticker = stickerDetails(entry.target);
     if (sticker) this.patches.set(entry.target, 'data-sc-sticker');
     else this.patches.reset(entry.target, 'data-sc-sticker');
-    const kind = sticker ? '스티커' : entry.target.matches('video') || entry.target.querySelector('video') ? '영상' : '이미지';
+    const kind = sticker ? '스티커' : entry.target.matches('video, [class*="embedVideo_"]') || entry.target.querySelector('video, iframe') ? '영상' : '이미지';
     const spoiler = entry.target.closest('[class*="spoiler" i]') || entry.target.querySelector('[class*="spoiler" i]');
     const name = sticker && !spoiler ? emojiText(sticker.name) : '';
     const caption = name ? `[스티커: ${name}]` : kind;

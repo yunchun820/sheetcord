@@ -9,7 +9,7 @@ const names: Record<string, string> = {
   '👍': 'thumbsup', '👎': 'thumbsdown', '👋': 'wave', '🙏': 'pray', '👏': 'clap',
   '❤️': 'heart', '❤': 'heart', '💚': 'green_heart', '💯': '100', '🔥': 'fire',
   '✨': 'sparkles', '🎉': 'tada', '✅': 'check', '❌': 'x', '👀': 'eyes', '🚀': 'rocket',
-  '💻': 'computer', '📎': 'paperclip', '📌': 'pushpin', '📊': 'bar_chart', '😭': 'sob',
+  '💻': 'computer', '📎': 'paperclip', '📌': 'pushpin', '📊': 'bar_chart', '😭': 'sob', '💀': 'skull',
 };
 
 export function emojiText(text: string): string {

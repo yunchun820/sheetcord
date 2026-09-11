@@ -2,6 +2,8 @@ import './native.css';
 import { SheetcordController } from '../src/controller';
 import { defaults, sanitizeSettings, type Settings, type SettingsStore } from '../src/settings';
 import { addTopbarFixture } from '../tests/topbar-fixture';
+import { addForumFixture } from '../tests/forum-fixture';
+import { addForumViewFixture } from '../tests/forum-view-fixture';
 import { fixtureMarkup, messageMarkup } from '../tests/fixture';
 import { addDarkSidebarFixture, addSidebarThreadsFixture } from '../tests/sidebar-fixture';
 import { addAppearanceFixture } from '../tests/appearance-fixture';
@@ -17,6 +19,10 @@ import { addAudioMenuFixture } from '../tests/audio-menu-fixture';
 import { addMediaDisplayFixture, addChromePolishFixture, addConcealRegressionFixture, addStickerInteractionFixture, addImageSizingFixture } from '../tests/media-display-fixture';
 import { addVirtualChannelFixture } from '../tests/virtual-channel-fixture';
 import { addThreadFixture, addNativeThreadFixture, addBotThreadFixture } from '../tests/thread-fixture';
+import { addMediaLoadingFixture } from '../tests/media-loading-fixture';
+import { addSystemEmbedFixture } from '../tests/system-embed-fixture';
+import { addVideoEmbedFixture } from '../tests/video-embed-fixture';
+import { addAttachmentActionsFixture } from '../tests/media-display-fixture';
 
 // Offline fixture only. This page never authenticates or connects to Discord.
 const appearanceAudit = new URLSearchParams(location.search).has('appearance-audit');
@@ -50,6 +56,12 @@ const botThread = new URLSearchParams(location.search).has('bot-thread');
 if (!location.pathname.startsWith('/channels/')) history.replaceState(null, '', '/channels/100/1000');
 document.body.innerHTML = fixtureMarkup();
 document.body.classList.add('demo-mode');
+if (new URLSearchParams(location.search).has('forum-list')) addForumFixture();
+if (new URLSearchParams(location.search).has('forum-auto')) addForumViewFixture(30);
+if (new URLSearchParams(location.search).has('system-embeds')) addSystemEmbedFixture();
+if (new URLSearchParams(location.search).has('video-embed')) addVideoEmbedFixture();
+if (new URLSearchParams(location.search).has('attachment-actions')) addAttachmentActionsFixture();
+if (new URLSearchParams(location.search).has('media-loading')) addMediaLoadingFixture();
 if (new URLSearchParams(location.search).has('sidebar-threads')) addSidebarThreadsFixture();
 if (channelAudit) addChannelAuditFixture();
 if (messageParity) addMessageParityFixture();
@@ -142,8 +154,15 @@ app.addEventListener('click', event => {
   }
   if (target.dataset.action === 'emoji-picker') { editor.append('😊'); editor.focus(); }
   if (target.matches('.attachButton_fixture')) form.querySelector<HTMLInputElement>('input[type="file"]')!.click();
+  if (target.getAttribute('data-list-item-id')?.startsWith('forum-channel-list-')) return;
   if (target.hasAttribute('data-list-item-id') || target.matches('a.channel-link')) {
     event.preventDefault();
+    const threadId = target.getAttribute('data-list-item-id')?.match(/^channels___(\d+)$/)?.[1];
+    if (threadId) {
+      history.pushState(null, '', `/channels/${location.pathname.split('/')[2]}/${threadId}`);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      return;
+    }
     const id = target.getAttribute('data-list-item-id')?.replace('guildsnav___', '');
     const path = id ? (id === 'home' ? '/channels/@me' : `/channels/${id}/1000`) : target.getAttribute('href')!;
     history.pushState(null, '', path);
